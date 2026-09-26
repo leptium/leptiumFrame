@@ -88,6 +88,14 @@ function initDOMReferences() {
   elements.clock = document.getElementById('clock');
   elements.currentDate = document.getElementById('currentDate');
   elements.weatherWidget = document.getElementById('weatherWidget');
+  elements.weatherTemp = document.getElementById('weatherTemp');
+  elements.weatherCity = document.getElementById('weatherCity');
+  elements.manualLocationModal = document.getElementById('manualLocationModal');
+  elements.btnCloseCityModal = document.getElementById('btnCloseCityModal');
+  elements.formManualLocation = document.getElementById('formManualLocation');
+  elements.inputCitySearch = document.getElementById('inputCitySearch');
+  elements.btnSaveCity = document.getElementById('btnSaveCity');
+  elements.citySearchError = document.getElementById('citySearchError');
   elements.deviceLocation = document.getElementById('deviceLocation');
   elements.weatherBox = document.getElementById('weatherBox');
   elements.greeting = document.getElementById('greeting');
@@ -452,29 +460,243 @@ function updateClockAndStatus() {
   }
 }
 
-function applyFallbackWeather() {
-  // Ocultar widget meteorológico o renderizar estado estático seguro sin romper el layout
-  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
-  if (weatherWidget) {
-    weatherWidget.style.display = 'none';
+const MANUAL_LOCATION_KEY = 'leptium_manual_location';
+
+function getSavedManualLocation() {
+  try {
+    const raw = localStorage.getItem(MANUAL_LOCATION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed.lat === 'number' &&
+      typeof parsed.lon === 'number' &&
+      !Number.isNaN(parsed.lat) &&
+      !Number.isNaN(parsed.lon) &&
+      typeof parsed.name === 'string' &&
+      parsed.name.trim().length > 0
+    ) {
+      return {
+        name: parsed.name.trim(),
+        lat: parsed.lat,
+        lon: parsed.lon
+      };
+    }
+  } catch (_) {
+    // Fallo silencioso en lectura de localStorage
   }
-  if (elements.deviceLocation) {
-    elements.deviceLocation.style.display = 'none';
-  }
-  if (elements.weatherBox) {
-    elements.weatherBox.style.display = 'none';
+  return null;
+}
+
+function saveManualLocation(locationObj) {
+  try {
+    localStorage.setItem(
+      MANUAL_LOCATION_KEY,
+      JSON.stringify({
+        name: locationObj.name,
+        lat: locationObj.lat,
+        lon: locationObj.lon
+      })
+    );
+  } catch (_) {
+    // Fallo silencioso en escritura de localStorage
   }
 }
 
-async function fetchWeatherData(lat, lon) {
+function applyFallbackWeather() {
+  // Transformar el widget de clima en un llamado a la acción interactivo ("--° | Toca para fijar tu ciudad")
+  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  const weatherTemp = elements.weatherTemp || document.getElementById('weatherTemp');
+  const weatherCity = elements.weatherCity || document.getElementById('weatherCity');
+
+  if (weatherWidget) {
+    weatherWidget.classList.add('unconfigured');
+    weatherWidget.style.display = 'inline-flex';
+  }
+  if (weatherTemp) {
+    weatherTemp.textContent = '--°';
+  }
+  if (weatherCity) {
+    weatherCity.textContent = 'Toca para fijar tu ciudad';
+  }
+}
+
+function updateWeatherWidgetUI({ tempStr, locationStr }) {
+  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  const weatherTemp = elements.weatherTemp || document.getElementById('weatherTemp');
+  const weatherCity = elements.weatherCity || document.getElementById('weatherCity');
+
+  if (!locationStr && (!tempStr || tempStr === '--°')) {
+    applyFallbackWeather();
+    return;
+  }
+
+  if (weatherWidget) {
+    weatherWidget.classList.remove('unconfigured');
+    weatherWidget.style.display = 'inline-flex';
+  }
+  if (weatherTemp) {
+    weatherTemp.textContent = tempStr || '--°';
+  }
+  if (weatherCity) {
+    weatherCity.textContent = locationStr || 'Ubicación actual';
+  }
+}
+
+async function fetchWeatherData(lat, lon, manualCityName = '') {
   try {
-    await weatherService.fetchWeatherData(lat, lon);
+    const result = await weatherService.fetchWeatherData(lat, lon, manualCityName);
+    if (result && (result.locationStr || (result.tempStr && result.tempStr !== '--°'))) {
+      updateWeatherWidgetUI(result);
+    } else {
+      applyFallbackWeather();
+    }
   } catch (_) {
     applyFallbackWeather();
   }
 }
 
+function openManualLocationModal(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+  const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
+  const input = elements.inputCitySearch || document.getElementById('inputCitySearch');
+  const errorEl = elements.citySearchError || document.getElementById('citySearchError');
+
+  if (!modal) return;
+  if (errorEl) {
+    errorEl.hidden = true;
+  }
+
+  const saved = getSavedManualLocation();
+  if (input) {
+    input.value = saved ? saved.name : '';
+  }
+
+  modal.hidden = false;
+
+  setTimeout(() => {
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 30);
+}
+
+function closeManualLocationModal(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+  const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
+  const errorEl = elements.citySearchError || document.getElementById('citySearchError');
+  if (errorEl) {
+    errorEl.hidden = true;
+  }
+  if (modal) {
+    modal.hidden = true;
+  }
+}
+
+async function handleManualLocationSubmit(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const input = elements.inputCitySearch || document.getElementById('inputCitySearch');
+  const btnSave = elements.btnSaveCity || document.getElementById('btnSaveCity');
+  const errorEl = elements.citySearchError || document.getElementById('citySearchError');
+
+  const query = input ? input.value.trim() : '';
+  if (!query) return;
+
+  if (errorEl) {
+    errorEl.hidden = true;
+  }
+  if (btnSave) {
+    btnSave.disabled = true;
+  }
+
+  try {
+    const geoResult = await weatherService.geocodeCity(query);
+    if (!geoResult) {
+      if (errorEl) {
+        errorEl.hidden = false;
+      }
+      return;
+    }
+
+    saveManualLocation(geoResult);
+    await fetchWeatherData(geoResult.lat, geoResult.lon, geoResult.name);
+    closeManualLocationModal();
+  } catch (_) {
+    if (errorEl) {
+      errorEl.hidden = false;
+    }
+  } finally {
+    if (btnSave) {
+      btnSave.disabled = false;
+    }
+  }
+}
+
+function bindManualWeatherEvents() {
+  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
+  const btnClose = elements.btnCloseCityModal || document.getElementById('btnCloseCityModal');
+  const form = elements.formManualLocation || document.getElementById('formManualLocation');
+
+  if (weatherWidget) {
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      weatherWidget.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+    weatherWidget.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openManualLocationModal(e);
+    });
+    weatherWidget.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        openManualLocationModal(e);
+      }
+    });
+  }
+
+  if (modal) {
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      modal.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeManualLocationModal(e);
+      });
+    }
+  }
+
+  if (btnClose) {
+    btnClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeManualLocationModal(e);
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', handleManualLocationSubmit);
+  }
+}
+
 function initWeatherModule() {
+  // Priorizar ubicación manual persistida en localStorage bajo leptium_manual_location
+  const savedManual = getSavedManualLocation();
+  if (savedManual) {
+    fetchWeatherData(savedManual.lat, savedManual.lon, savedManual.name);
+    return;
+  }
+
   if (typeof navigator === 'undefined' || !('geolocation' in navigator) || !navigator.geolocation) {
     applyFallbackWeather();
     return;
@@ -508,7 +730,7 @@ function initWeatherModule() {
       },
       (_error) => {
         // Manejo silencioso: PERMISSION_DENIED (1), POSITION_UNAVAILABLE (2), TIMEOUT (3)
-        // o bloqueo por overlay del sistema operativo
+        // o bloqueo por overlay del sistema operativo -> mostrar CTA manual
         if (settled) return;
         settled = true;
         clearTimeout(watchdog);
@@ -1387,26 +1609,20 @@ async function bootstrap() {
   burnInShield.register(elements.actionToolbar);
   burnInShield.start();
 
+  // Vincular eventos interactivos del widget de clima y modal de ubicación manual
+  bindManualWeatherEvents();
+
   // Suscripción reactiva del módulo de clima y geolocalización (iniciado en segundo plano sin bloqueo)
-  weatherService.subscribe(({ locationStr, weatherStr }) => {
-    const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
-    if (weatherWidget) {
-      weatherWidget.style.display = (locationStr || weatherStr) ? 'flex' : 'none';
-    }
+  weatherService.subscribe(({ locationStr, weatherStr, tempStr }) => {
+    updateWeatherWidgetUI({ tempStr, locationStr });
     if (elements.deviceLocation) {
       if (locationStr) {
         elements.deviceLocation.innerHTML = `${icons.location} ${locationStr}`;
-        elements.deviceLocation.style.display = 'flex';
-      } else {
-        elements.deviceLocation.style.display = 'none';
       }
     }
     if (elements.weatherBox) {
       if (weatherStr) {
         elements.weatherBox.innerHTML = `${icons.thermometer} ${weatherStr}`;
-        elements.weatherBox.style.display = 'flex';
-      } else {
-        elements.weatherBox.style.display = 'none';
       }
     }
   });
@@ -1476,7 +1692,7 @@ async function bootstrap() {
   if (elements.wrapper) {
     elements.wrapper.addEventListener('touchstart', (e) => {
       // Ignorar si el toque se originó en controles interactivos, barras o botones
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
       touchStartX = e.changedTouches[0].screenX;
@@ -1485,13 +1701,14 @@ async function bootstrap() {
 
     elements.wrapper.addEventListener('touchend', (e) => {
       // Ignorar si el toque finalizó sobre controles interactivos para no activar el toque por zonas de la foto
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
       lastTouchTimestamp = Date.now();
 
       if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
+      if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') {
         closeSettings();
         return;
@@ -1526,11 +1743,12 @@ async function bootstrap() {
       if (Date.now() - lastTouchTimestamp < 600) return;
 
       // Evitar que el clic en botones, modales o toolbars cambie la foto
-      if (e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
       if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
+      if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') {
         closeSettings();
         return;
@@ -1572,6 +1790,21 @@ async function bootstrap() {
   window.addEventListener('keydown', (e) => {
     if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
 
+    if (e.key === 'Escape') {
+      if (elements.manualLocationModal && !elements.manualLocationModal.hidden) {
+        closeManualLocationModal(e);
+        return;
+      }
+      if (elements.settingsModal && elements.settingsModal.style.display === 'block') closeSettings();
+      if (elements.collageModal && elements.collageModal.style.display === 'flex') cerrarCollageModal();
+      if (elements.infoDetailModal && elements.infoDetailModal.style.display === 'block') cerrarInfoDetallada();
+      return;
+    }
+
+    // No interceptar teclas si el modal de ubicación está abierto o si el foco está en un campo de texto
+    if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+    if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+
     if (e.key === 'ArrowRight') {
       nextPhoto();
     } else if (e.key === 'ArrowLeft') {
@@ -1579,10 +1812,6 @@ async function bootstrap() {
     } else if (e.key === ' ' || e.code === 'Space') {
       e.preventDefault();
       togglePause();
-    } else if (e.key === 'Escape') {
-      if (elements.settingsModal && elements.settingsModal.style.display === 'block') closeSettings();
-      if (elements.collageModal && elements.collageModal.style.display === 'flex') cerrarCollageModal();
-      if (elements.infoDetailModal && elements.infoDetailModal.style.display === 'block') cerrarInfoDetallada();
     }
   });
 

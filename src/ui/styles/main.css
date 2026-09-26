@@ -340,30 +340,242 @@ body.canvas-paused #emptyStateContainer {
   letter-spacing: -0.5px;
 }
 
+.weather-widget,
 #weatherWidget {
-  display: none;
-  flex-direction: column;
-  align-items: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.84em;
+  line-height: 1.2;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
-#deviceLocation {
-  font-size: 0.88em; 
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.9);
-  margin-top: 4px;
-  display: flex;
+.weather-widget:hover,
+#weatherWidget:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.weather-widget:active,
+#weatherWidget:active {
+  transform: scale(0.97);
+}
+
+.weather-widget:focus-visible,
+#weatherWidget:focus-visible {
+  outline: 2px solid #ffd60a;
+  outline-offset: 2px;
+}
+
+.weather-widget.unconfigured {
+  background: rgba(255, 214, 10, 0.1);
+  border-color: rgba(255, 214, 10, 0.36);
+}
+
+.weather-widget.unconfigured:hover {
+  background: rgba(255, 214, 10, 0.18);
+  border-color: rgba(255, 214, 10, 0.55);
+}
+
+.weather-icon-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #32ade6;
+  flex-shrink: 0;
+}
+
+.weather-widget.unconfigured .weather-icon-slot {
+  color: #ffd60a;
+}
+
+.weather-info {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
+.weather-temp {
+  font-weight: 600;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-separator {
+  opacity: 0.45;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.weather-city {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 210px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather-widget.unconfigured .weather-city {
+  color: #ffd60a;
+}
+
+/* Modal minimalista de ubicación manual (.leptium-modal) */
+.leptium-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.leptium-modal[hidden] {
+  display: none !important;
+}
+
+.leptium-modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.leptium-modal .modal-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 390px;
+  background: rgba(26, 26, 30, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.leptium-modal .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.leptium-modal .modal-title {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.leptium-modal .btn-icon {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.leptium-modal .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.leptium-modal .btn-icon:active {
+  transform: scale(0.94);
+}
+
+.leptium-modal .modal-form {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.leptium-modal #inputCitySearch {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 0.94rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.leptium-modal #inputCitySearch::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.leptium-modal #inputCitySearch:focus {
+  border-color: #ffd60a;
+  box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.18);
+}
+
+.leptium-modal .modal-btn-primary {
+  padding: 11px 18px;
+  border-radius: 12px;
+  border: none;
+  background: #ffd60a;
+  color: #0a0a0c;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, opacity 0.2s ease, background 0.2s ease;
+}
+
+.leptium-modal .modal-btn-primary:hover {
+  background: #ffe033;
+}
+
+.leptium-modal .modal-btn-primary:active {
+  transform: scale(0.97);
+}
+
+.leptium-modal .modal-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.leptium-modal .modal-hint-error {
+  margin: 12px 0 0 0;
+  font-size: 0.84rem;
+  color: #ff453a;
+  line-height: 1.35;
+}
+
+.leptium-modal .modal-hint-error[hidden] {
+  display: none !important;
+}
+
+#deviceLocation,
 #weatherBox {
-  font-size: 0.85em; 
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
-  margin-top: 2px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: none;
 }
 
 /* Metadatos de la Foto */

@@ -33,9 +33,20 @@
     <div id="topRightPanel" class="glass-card ambient-overlay" onclick="toggleSettings(event)">
       <div id="currentDate"></div>
       <div id="clock"></div>
-      <div id="weatherWidget" style="display:none;">
-        <div id="deviceLocation" style="display:none;"></div>
-        <div id="weatherBox" style="display:none;"></div>
+      <!-- Widget interactivo de clima -->
+      <div id="weatherWidget" class="weather-widget unconfigured" role="button" tabindex="0" aria-label="Ajustar ubicación del clima">
+        <div class="weather-icon-slot">
+          <!-- SVG Pin SF Symbols style -->
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+        </div>
+        <div class="weather-info">
+          <span id="weatherTemp" class="weather-temp">--°</span>
+          <span class="weather-separator">|</span>
+          <span id="weatherCity" class="weather-city">Toca para fijar tu ciudad</span>
+        </div>
       </div>
     </div>
     
@@ -444,6 +455,33 @@
         <button id="btnDeactivateLicense" class="btn-secondary" onclick="window.confirmDeactivateLicense()" style="display:none;width:100%;margin-top:8px;padding:10px 20px;color:#ff453a;border-color:rgba(255,69,58,0.3);" data-i18n="license.deactivateBtn">Desactivar Licencia</button>
         <button class="btn-secondary" onclick="window.closeLicenseModal()" data-i18n="settings.close" style="width:100%;margin-top:8px;padding:10px 20px;">Cerrar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal minimalista de entrada manual -->
+  <div id="manualLocationModal" class="leptium-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title">Ubicación del clima</span>
+        <button id="btnCloseCityModal" type="button" class="btn-icon" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <form id="formManualLocation" class="modal-form">
+        <input 
+          type="text" 
+          id="inputCitySearch" 
+          placeholder="Ingresa tu ciudad o código postal..." 
+          autocomplete="off" 
+          required 
+        />
+        <button type="submit" id="btnSaveCity" class="modal-btn-primary">Guardar</button>
+      </form>
+      <p id="citySearchError" class="modal-hint-error" hidden>No se encontró la ubicación. Intenta con una ciudad cercana.</p>
     </div>
   </div>
 
