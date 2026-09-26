@@ -87,6 +87,7 @@ function initDOMReferences() {
   elements.overlay = document.getElementById('overlay');
   elements.clock = document.getElementById('clock');
   elements.currentDate = document.getElementById('currentDate');
+  elements.weatherWidget = document.getElementById('weatherWidget');
   elements.deviceLocation = document.getElementById('deviceLocation');
   elements.weatherBox = document.getElementById('weatherBox');
   elements.greeting = document.getElementById('greeting');
@@ -448,6 +449,79 @@ function updateClockAndStatus() {
     elements.wrapper.classList.add('night-dim');
   } else {
     elements.wrapper.classList.remove('night-dim');
+  }
+}
+
+function applyFallbackWeather() {
+  // Ocultar widget meteorológico o renderizar estado estático seguro sin romper el layout
+  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  if (weatherWidget) {
+    weatherWidget.style.display = 'none';
+  }
+  if (elements.deviceLocation) {
+    elements.deviceLocation.style.display = 'none';
+  }
+  if (elements.weatherBox) {
+    elements.weatherBox.style.display = 'none';
+  }
+}
+
+async function fetchWeatherData(lat, lon) {
+  try {
+    await weatherService.fetchWeatherData(lat, lon);
+  } catch (_) {
+    applyFallbackWeather();
+  }
+}
+
+function initWeatherModule() {
+  if (typeof navigator === 'undefined' || !('geolocation' in navigator) || !navigator.geolocation) {
+    applyFallbackWeather();
+    return;
+  }
+
+  const geoOptions = {
+    enableHighAccuracy: false,
+    timeout: 6000,
+    maximumAge: 3600000 // Reutilizar coordenadas en caché hasta 1 hora
+  };
+
+  let settled = false;
+  const watchdog = setTimeout(() => {
+    if (!settled) {
+      settled = true;
+      applyFallbackWeather();
+    }
+  }, 6200);
+
+  try {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(watchdog);
+        if (position && position.coords) {
+          fetchWeatherData(position.coords.latitude, position.coords.longitude);
+        } else {
+          applyFallbackWeather();
+        }
+      },
+      (_error) => {
+        // Manejo silencioso: PERMISSION_DENIED (1), POSITION_UNAVAILABLE (2), TIMEOUT (3)
+        // o bloqueo por overlay del sistema operativo
+        if (settled) return;
+        settled = true;
+        clearTimeout(watchdog);
+        applyFallbackWeather();
+      },
+      geoOptions
+    );
+  } catch (_) {
+    if (!settled) {
+      settled = true;
+      clearTimeout(watchdog);
+      applyFallbackWeather();
+    }
   }
 }
 
@@ -1313,8 +1387,12 @@ async function bootstrap() {
   burnInShield.register(elements.actionToolbar);
   burnInShield.start();
 
-  // Iniciar servicio de clima y geolocalización
+  // Suscripción reactiva del módulo de clima y geolocalización (iniciado en segundo plano sin bloqueo)
   weatherService.subscribe(({ locationStr, weatherStr }) => {
+    const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+    if (weatherWidget) {
+      weatherWidget.style.display = (locationStr || weatherStr) ? 'flex' : 'none';
+    }
     if (elements.deviceLocation) {
       if (locationStr) {
         elements.deviceLocation.innerHTML = `${icons.location} ${locationStr}`;
@@ -1332,7 +1410,6 @@ async function bootstrap() {
       }
     }
   });
-  weatherService.start();
 
   // Iniciar reloj y estado cada segundo
   setInterval(updateClockAndStatus, 1000);
@@ -2003,6 +2080,21 @@ async function bootstrap() {
   } catch (renderErr) {
     console.error('[FenixFrame] Error al renderizar slide inicial:', renderErr);
   }
+
+  // Iniciar módulo de geolocalización y clima en segundo plano de forma no bloqueante
+  // después de que el motor de diapositivas ya esté en ejecución
+  setTimeout(() => {
+    initWeatherModule();
+  }, 0);
+  setInterval(() => {
+    initWeatherModule();
+  }, 30 * 60 * 1000);
+}
+
+if (typeof window !== 'undefined') {
+  window.initWeatherModule = initWeatherModule;
+  window.fetchWeatherData = fetchWeatherData;
+  window.applyFallbackWeather = applyFallbackWeather;
 }
 
 if (document.readyState === 'loading') {

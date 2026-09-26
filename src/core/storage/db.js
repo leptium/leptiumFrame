@@ -17,19 +17,44 @@ export const FenixDB = (() => {
       return null;
     }
 
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = (e) => {
-        const database = e.target.result;
-        if (!database.objectStoreNames.contains(STORE_NAME)) {
-          database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = (result) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(result);
         }
       };
-      request.onsuccess = () => {
-        db = request.result;
-        resolve(db);
-      };
-      request.onerror = () => reject(request.error);
+      const timer = setTimeout(() => {
+        console.warn('[FenixDB] Timeout al abrir IndexedDB, continuando en modo memoria');
+        done(null);
+      }, 2500);
+
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        request.onsuccess = () => {
+          db = request.result;
+          done(db);
+        };
+        request.onerror = () => {
+          console.warn('[FenixDB] Error al abrir IndexedDB:', request.error);
+          done(null);
+        };
+        request.onblocked = () => {
+          console.warn('[FenixDB] IndexedDB bloqueado, continuando sin bloqueo');
+          done(null);
+        };
+      } catch (err) {
+        console.warn('[FenixDB] Excepcion abriendo IndexedDB:', err);
+        done(null);
+      }
     });
   }
 

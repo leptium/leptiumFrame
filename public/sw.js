@@ -5,7 +5,7 @@
  * Fail-safe: Resilient Cache-First for images with offline fallback.
  */
 
-const CACHE_NAME = 'fenixframe-v15';
+const CACHE_NAME = 'fenixframe-v16';
 const PRECACHE_ASSETS = [
   '/',
   '/app/',
