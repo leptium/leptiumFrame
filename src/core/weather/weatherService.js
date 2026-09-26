@@ -1,6 +1,7 @@
 /**
  * Servicio de clima y geolocalización adaptativo.
- * Combina geolocalización IP / coordenadas GPS y pronóstico en tiempo real.
+ * Combina geolocalización nativa del navegador (GPS/Wi-Fi) con geocodificación inversa
+ * (BigDataCloud / Nominatim) y fallback por IP, consultando pronóstico en tiempo real (Open-Meteo).
  */
 export class WeatherService {
   constructor(options = {}) {
@@ -17,13 +18,87 @@ export class WeatherService {
   }
 
   _notify() {
-    this.listeners.forEach(cb => cb({
-      locationStr: this.currentLocationStr,
-      weatherStr: this.currentWeatherStr
-    }));
+    this.listeners.forEach((cb) =>
+      cb({
+        locationStr: this.currentLocationStr,
+        weatherStr: this.currentWeatherStr
+      })
+    );
+  }
+
+  _getBrowserPosition() {
+    return new Promise((resolve, reject) => {
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        reject(new Error('Geolocation API no disponible'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false,
+        timeout: 6000,
+        maximumAge: 15 * 60 * 1000
+      });
+    });
+  }
+
+  async _reverseGeocode(lat, lon) {
+    try {
+      const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`;
+      const res = await fetch(bdcUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const city = data.city || data.locality || '';
+        const region = data.principalSubdivisionCode
+          ? data.principalSubdivisionCode.replace(/^[A-Z]{2}-/, '')
+          : data.principalSubdivision || '';
+        if (city) {
+          return city + (region ? `, ${region}` : '');
+        }
+      }
+    } catch (e) {
+      console.warn('[WeatherService] Fallback geocodificación inversa:', e);
+    }
+    return '';
   }
 
   async fetchLocation() {
+    // 1. Intentar geolocalización nativa del navegador (solicita permiso si aplica)
+    try {
+      const pos = await this._getBrowserPosition();
+      if (pos && pos.coords) {
+        this.defaultLat = pos.coords.latitude;
+        this.defaultLon = pos.coords.longitude;
+        const resolvedName = await this._reverseGeocode(this.defaultLat, this.defaultLon);
+        if (resolvedName) {
+          this.currentLocationStr = resolvedName;
+          this._notify();
+          return;
+        }
+      }
+    } catch (_) {
+      // Si el usuario deniega permiso o expira, continuar con fallback silencioso por IP
+    }
+
+    // 2. Fallback: Geolocalización aproximada vía BigDataCloud / ipwho.is
+    try {
+      const bdcRes = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=es');
+      if (bdcRes.ok) {
+        const data = await bdcRes.json();
+        const city = data.city || data.locality || '';
+        const region = data.principalSubdivisionCode
+          ? data.principalSubdivisionCode.replace(/^[A-Z]{2}-/, '')
+          : data.principalSubdivision || '';
+        if (city) {
+          this.currentLocationStr = city + (region ? `, ${region}` : '');
+          if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+            this.defaultLat = data.latitude;
+            this.defaultLon = data.longitude;
+          }
+          this._notify();
+          return;
+        }
+      }
+    } catch (_) {}
+
     try {
       const res = await fetch('https://ipwho.is/');
       if (res.ok) {
@@ -58,6 +133,7 @@ export class WeatherService {
           const tempC = Math.round(((tempF - 32) * 5) / 9);
           this.currentWeatherStr = `${tempF}°F  /  ${tempC}°C`;
           this._notify();
+          return;
         }
       }
     } catch (e) {
