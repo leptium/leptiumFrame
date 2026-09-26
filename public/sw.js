@@ -5,13 +5,10 @@
  * Fail-safe: Resilient Cache-First for images with offline fallback.
  */
 
-const CACHE_NAME = 'fenixframe-v10';
+const CACHE_NAME = 'fenixframe-v11';
 const PRECACHE_ASSETS = [
   '/',
-  '/app',
   '/app/',
-  '/app.html',
-  '/app/index.html',
   '/manifest.webmanifest',
   '/favicon.svg',
   '/logo.svg',

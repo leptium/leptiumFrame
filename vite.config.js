@@ -2,7 +2,7 @@ import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
+  base: '/',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -11,8 +11,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        app: resolve(__dirname, 'app.html'),
-        appLegacy: resolve(__dirname, 'app/index.html')
+        app: resolve(__dirname, 'app/index.html')
       }
     }
   },
