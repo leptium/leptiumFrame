@@ -1,38 +1,37 @@
 :root {
-  /* Default Profile: desktop */
-  --btn-size: 46px;
-  --btn-icon-size: 20px;
-  --bar-padding: 8px 14px;
-  --bar-gap: 10px;
-  --bar-radius: 999px;
-  --bar-bottom-offset: 24px;
+  --btn-size: clamp(42px, 5.5vmin, 50px);
+  --btn-icon-size: clamp(20px, 2.6vmin, 24px);
+  --bar-padding: clamp(8px, 1.2vmin, 12px);
+  --bar-gap: clamp(8px, 1.2vmin, 12px);
+  --bar-radius: 22px;
+  --bar-bottom-offset: clamp(16px, 3vmin, 32px);
 }
 
-/* Profile: Smart TV / 10-Foot UI */
 [data-device-profile="tv"] {
-  --btn-size: clamp(60px, 4.5vw, 76px);
-  --btn-icon-size: clamp(26px, 2vw, 34px);
-  --bar-padding: 14px 24px;
-  --bar-gap: 18px;
+  --btn-size: clamp(56px, 5vmin, 72px);
+  --btn-icon-size: clamp(28px, 2.5vmin, 36px);
+  --bar-padding: 16px 24px;
+  --bar-gap: 16px;
+  --bar-radius: 32px;
   --bar-bottom-offset: 48px;
 }
 
-/* Profile: Modern Smartphone */
 [data-device-profile="phone"] {
-  --btn-size: 42px;
+  --btn-size: 38px;
   --btn-icon-size: 18px;
   --bar-padding: 6px 10px;
   --bar-gap: 6px;
+  --bar-radius: 18px;
   --bar-bottom-offset: 16px;
 }
 
-/* Profile: Legacy Tablet (iPad Air / Android Tab) */
 [data-device-profile="legacy-tablet"] {
-  --btn-size: 50px;
+  --btn-size: 48px;
   --btn-icon-size: 22px;
-  --bar-padding: 10px 16px;
-  --bar-gap: 12px;
-  --bar-bottom-offset: 28px;
+  --bar-padding: 10px 14px;
+  --bar-gap: 10px;
+  --bar-radius: 24px;
+  --bar-bottom-offset: 24px;
 }
 
 * { 
@@ -489,25 +488,21 @@ body.canvas-paused #emptyStateContainer {
 
 /* Barra de herramientas universal adaptable por perfil */
 #actionToolbar {
-  position: fixed;
-  bottom: calc(var(--bar-bottom-offset) + env(safe-area-inset-bottom, 0px));
+  position: absolute;
+  bottom: var(--bar-bottom-offset);
   left: 50%;
   transform: translate3d(-50%, 0, 0);
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: var(--bar-gap);
   padding: var(--bar-padding);
   border-radius: var(--bar-radius);
-  max-width: calc(100vw - 24px);
-  overflow-x: auto;
-  scrollbar-width: none;
-  background: rgba(18, 18, 22, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  z-index: 1000;
-  transition: padding 0.25s ease, gap 0.25s ease, background 0.25s ease, opacity 0.35s ease;
+  background: rgba(18, 18, 18, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 100;
+  will-change: transform, opacity;
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease;
   pointer-events: auto;
 }
 
@@ -517,43 +512,39 @@ body.canvas-paused #emptyStateContainer {
 
 .tool-btn,
 #actionToolbar .toolbar-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.88);
-  text-decoration: none;
-  box-sizing: border-box;
-  cursor: pointer;
   width: var(--btn-size);
   height: var(--btn-size);
-  min-width: var(--btn-size);
-  min-height: var(--btn-size);
-  line-height: 1;
-  border-radius: 50%;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  touch-action: manipulation;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.15s ease, color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  color: #ffffff;
+  text-decoration: none;
+  flex-shrink: 0;
 }
 
 #actionToolbar .toolbar-btn svg {
   width: var(--btn-icon-size);
   height: var(--btn-icon-size);
+  stroke-width: 1.75;
+  stroke: #ffffff;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
-/* Toolbar en Pausa: Minimalismo estricto */
 #actionToolbar.is-paused .toolbar-btn:not(.keep-on-pause) {
   display: none !important;
 }
 
 #actionToolbar.is-paused {
-  padding: var(--bar-padding);
-  gap: calc(var(--bar-gap) * 1.25);
   background: rgba(18, 18, 18, 0.88);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .tool-btn:hover,
@@ -567,11 +558,15 @@ body.canvas-paused #emptyStateContainer {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.tool-btn.btn-heart.active svg { fill: #ff3b30; stroke: #ff3b30; }
-.tool-btn.btn-star.active svg { fill: #ffd60a; stroke: #ffd60a; }
+.tool-btn.btn-heart.active svg,
+#actionToolbar .toolbar-btn.btn-heart.active svg { fill: #ff3b30; stroke: #ff3b30; }
+.tool-btn.btn-star.active svg,
+#actionToolbar .toolbar-btn.btn-star.active svg { fill: #ffd60a; stroke: #ffd60a; }
 
-#btnHidePhoto {
+#btnHidePhoto,
+#actionToolbar #btnHidePhoto svg {
   color: #ff453a;
+  stroke: #ff453a;
 }
 
 #progressBar {

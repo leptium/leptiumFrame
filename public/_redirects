@@ -1,6 +1,3 @@
-# Redirección canónica a subcarpeta de la app
 /app          /app/         301
 /app/         /app.html     200
-
-# Forzar dominio apex limpio
 https://www.leptiumframe.app/*    https://leptiumframe.app/:splat    301!

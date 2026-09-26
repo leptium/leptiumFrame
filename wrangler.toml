@@ -1,0 +1,11 @@
+# Cloudflare Pages — Production Configuration for leptium FenixFrame
+# Entity: Terravault Media LLC
+# Custom Domains: leptiumframe.app, www.leptiumframe.app -> leptiumframe.pages.dev (Proxied)
+
+name = "leptiumframe"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-26"
+
+[vars]
+NODE_VERSION = "22"
+PUBLIC_CANONICAL_ORIGIN = "https://leptiumframe.app"

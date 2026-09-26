@@ -26,41 +26,31 @@ WakeLock.enable().catch((err) => console.warn('[WakeLock] Inicial:', err));
 
 // Subsistema Determinista de Perfiles de Dispositivo (TV, Phone, Legacy Tablet, Desktop)
 function evaluateAndApplyDeviceProfile() {
-  const ua = navigator.userAgent || '';
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  const dpr = window.devicePixelRatio || 1;
-  const minDim = Math.min(width, height);
-  const maxDim = Math.max(width, height);
-
-  const isCoarse = window.matchMedia('(pointer: coarse)').matches;
-  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const inputMode = (isCoarse || hasTouch) ? 'touch' : 'pointer';
-
-  const isTVUA = /TV|Web0S|Tizen|BRAVIA|AFT|Roku|SmartTV|Viera|NetCast|AppleTV|CrKey/i.test(ua);
-  const isLargeTenFoot = (!hasTouch && width >= 1920 && dpr <= 1.5);
+  const root = document.documentElement;
+  const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  const minDim = Math.min(window.innerWidth, window.innerHeight);
+  const maxDim = Math.max(window.innerWidth, window.innerHeight);
+  const ua = (navigator.userAgent || '').toLowerCase();
+  const isTV = /smart-tv|tizen|webos|googletv|android tv|crkey|appletv/i.test(ua);
 
   let profile = 'desktop';
-
-  if (isTVUA || isLargeTenFoot) {
+  if (isTV || (!isTouch && maxDim >= 1920 && minDim >= 1080)) {
     profile = 'tv';
-  } else if (minDim < 600 || (maxDim < 960 && inputMode === 'touch')) {
+  } else if (isTouch && minDim < 600) {
     profile = 'phone';
-  } else if (inputMode === 'touch' && minDim >= 600 && maxDim <= 1366) {
+  } else if (isTouch && minDim >= 600) {
     profile = 'legacy-tablet';
-  } else {
-    profile = 'desktop';
   }
 
-  document.documentElement.setAttribute('data-device-profile', profile);
-  document.documentElement.setAttribute('data-input-mode', inputMode);
+  root.setAttribute('data-device-profile', profile);
+  root.setAttribute('data-input-mode', isTouch ? 'touch' : 'pointer');
 }
 
 if (typeof window !== 'undefined') {
-  evaluateAndApplyDeviceProfile();
   window.addEventListener('resize', evaluateAndApplyDeviceProfile, { passive: true });
   window.addEventListener('orientationchange', evaluateAndApplyDeviceProfile, { passive: true });
   document.addEventListener('DOMContentLoaded', evaluateAndApplyDeviceProfile);
+  evaluateAndApplyDeviceProfile();
 }
 
 // Detección inmediata de modo embebido (Landing page iframe demo)
