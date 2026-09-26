@@ -93,10 +93,13 @@ function initDOMReferences() {
   elements.weatherCity = document.getElementById('weatherCity');
   elements.manualLocationModal = document.getElementById('manualLocationModal');
   elements.btnCloseCityModal = document.getElementById('btnCloseCityModal');
+  elements.btnUseCurrentLocation = document.getElementById('btnUseCurrentLocation');
   elements.formManualLocation = document.getElementById('formManualLocation');
   elements.inputCitySearch = document.getElementById('inputCitySearch');
   elements.btnSaveCity = document.getElementById('btnSaveCity');
   elements.citySearchError = document.getElementById('citySearchError');
+  elements.btnUnitC = document.getElementById('btnUnitC');
+  elements.btnUnitF = document.getElementById('btnUnitF');
   elements.deviceLocation = document.getElementById('deviceLocation');
   elements.weatherBox = document.getElementById('weatherBox');
   elements.greeting = document.getElementById('greeting');
@@ -474,7 +477,7 @@ const STORAGE_KEY_UNITS = 'leptium_weather_units';
 const MANUAL_LOCATION_KEY = STORAGE_KEY_LOCATION;
 
 let currentTemperatureC = null;
-let currentUnit = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY_UNITS)) || 'celsius';
+let currentUnit = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY_UNITS)) || 'fahrenheit';
 
 function getUserLanguageCode() {
   const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'es';
@@ -488,10 +491,10 @@ function getWeatherConditionSvg(weatherCode, isDay = 1) {
     }
     return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
   }
-  if (weatherCode >= 51 && weatherCode <= 67 || (weatherCode >= 80 && weatherCode <= 82)) {
+  if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) {
     return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>';
   }
-  if (weatherCode >= 71 && weatherCode <= 77 || (weatherCode >= 85 && weatherCode <= 86)) {
+  if ((weatherCode >= 71 && weatherCode <= 77) || (weatherCode >= 85 && weatherCode <= 86)) {
     return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M8 15h.01"></path><path d="M8 19h.01"></path><path d="M12 17h.01"></path><path d="M12 21h.01"></path><path d="M16 15h.01"></path><path d="M16 19h.01"></path></svg>';
   }
   if (weatherCode >= 95) {
@@ -541,14 +544,18 @@ function saveManualLocation(locationObj) {
   }
 }
 
-function toggleTemperatureUnit() {
-  currentUnit = currentUnit === 'celsius' ? 'fahrenheit' : 'celsius';
-  try {
-    localStorage.setItem(STORAGE_KEY_UNITS, currentUnit);
-  } catch (_) {
-    // Fallo silencioso en escritura de localStorage
+function updateUnitSelectorUI() {
+  const btnC = elements.btnUnitC || document.getElementById('btnUnitC');
+  const btnF = elements.btnUnitF || document.getElementById('btnUnitF');
+  if (btnC && btnF) {
+    if (currentUnit === 'fahrenheit') {
+      btnF.classList.add('active');
+      btnC.classList.remove('active');
+    } else {
+      btnC.classList.add('active');
+      btnF.classList.remove('active');
+    }
   }
-  renderTemperatureDisplay();
 }
 
 function renderTemperatureDisplay() {
@@ -556,11 +563,26 @@ function renderTemperatureDisplay() {
   if (!tempEl || currentTemperatureC === null || Number.isNaN(currentTemperatureC)) return;
 
   if (currentUnit === 'fahrenheit') {
-    const fahrenheit = Math.round((currentTemperatureC * 9) / 5 + 32);
+    const fahrenheit = Math.round((currentTemperatureC * 9 / 5) + 32);
     tempEl.textContent = `${fahrenheit}°F`;
   } else {
     tempEl.textContent = `${Math.round(currentTemperatureC)}°C`;
   }
+}
+
+function setUnit(newUnit) {
+  currentUnit = newUnit === 'fahrenheit' ? 'fahrenheit' : 'celsius';
+  try {
+    localStorage.setItem(STORAGE_KEY_UNITS, currentUnit);
+  } catch (_) {
+    // Fallo silencioso en escritura de localStorage
+  }
+  updateUnitSelectorUI();
+  renderTemperatureDisplay();
+}
+
+function toggleTemperatureUnit() {
+  setUnit(currentUnit === 'fahrenheit' ? 'celsius' : 'fahrenheit');
 }
 
 function setWeatherCTAState() {
@@ -607,12 +629,12 @@ function updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay
   if (typeof tempC === 'number' && !Number.isNaN(tempC)) {
     currentTemperatureC = tempC;
     renderTemperatureDisplay();
-  } else if (weatherTemp) {
+  } else if (weatherTemp && currentTemperatureC === null) {
     weatherTemp.textContent = tempStr || '--°';
   }
 
-  if (weatherCity) {
-    weatherCity.textContent = locationStr || 'Ubicación actual';
+  if (weatherCity && locationStr) {
+    weatherCity.textContent = locationStr;
   }
 
   if (conditionIcon && typeof weatherCode === 'number') {
@@ -622,9 +644,14 @@ function updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay
 
 async function fetchWeatherData(lat, lon, cityName = '') {
   try {
-    const result = await weatherService.fetchWeatherData(lat, lon, cityName);
-    if (result && (result.locationStr || typeof result.tempC === 'number' || (result.tempStr && result.tempStr !== '--°'))) {
-      updateWeatherWidgetUI(result);
+    const effectiveCity = cityName === 'Mi ubicación' ? '' : cityName;
+    const result = await weatherService.fetchWeatherData(lat, lon, effectiveCity);
+    if (result && (result.locationStr || typeof result.tempC === 'number')) {
+      const displayCity = result.locationStr || cityName || 'Mi ubicación';
+      if (cityName === 'Mi ubicación' && result.locationStr && result.locationStr !== 'Ubicación actual') {
+        saveManualLocation({ lat, lon, name: result.locationStr });
+      }
+      updateWeatherWidgetUI({ ...result, locationStr: displayCity });
     } else {
       setWeatherCTAState();
     }
@@ -647,19 +674,14 @@ function openLocationModal(event) {
     errorEl.hidden = true;
   }
 
+  updateUnitSelectorUI();
+
   const saved = getSavedManualLocation();
   if (input) {
-    input.value = saved ? saved.name : '';
+    input.value = saved && saved.name !== 'Mi ubicación' ? saved.name : '';
   }
 
   modal.hidden = false;
-
-  setTimeout(() => {
-    if (input) {
-      input.focus();
-      input.select();
-    }
-  }, 30);
 }
 
 const openManualLocationModal = openLocationModal;
@@ -684,10 +706,10 @@ async function handleManualCitySubmit(query) {
   const errEl = elements.citySearchError || document.getElementById('citySearchError');
   if (errEl) errEl.hidden = true;
 
-  const langCode = getUserLanguageCode();
+  const lang = getUserLanguageCode();
 
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=1&language=${encodeURIComponent(langCode)}&format=json`;
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=1&language=${encodeURIComponent(lang)}&format=json`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -743,21 +765,27 @@ async function handleManualLocationSubmit(event) {
 }
 
 function bindManualWeatherEvents() {
-  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  const weatherEl = elements.weatherWidget || document.getElementById('weatherWidget');
   const tempEl = elements.weatherTemp || document.getElementById('weatherTemp');
-  const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
+  const modalEl = elements.manualLocationModal || document.getElementById('manualLocationModal');
   const btnClose = elements.btnCloseCityModal || document.getElementById('btnCloseCityModal');
+  const backdrop = modalEl?.querySelector('.modal-backdrop');
   const form = elements.formManualLocation || document.getElementById('formManualLocation');
+  const btnGps = elements.btnUseCurrentLocation || document.getElementById('btnUseCurrentLocation');
+  const btnC = elements.btnUnitC || document.getElementById('btnUnitC');
+  const btnF = elements.btnUnitF || document.getElementById('btnUnitF');
 
-  if (weatherWidget) {
+  updateUnitSelectorUI();
+
+  if (weatherEl) {
     ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
-      weatherWidget.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+      weatherEl.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
     });
-    weatherWidget.addEventListener('click', (e) => {
+    weatherEl.addEventListener('click', (e) => {
       e.stopPropagation();
       openLocationModal(e);
     });
-    weatherWidget.addEventListener('keydown', (e) => {
+    weatherEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
@@ -766,29 +794,22 @@ function bindManualWeatherEvents() {
     });
   }
 
-  // Alternar unidad (°C <-> °F) al tocar la temperatura si ya hay clima cargado
+  // Toggle rápido al tocar la temperatura en el widget
   if (tempEl) {
     tempEl.addEventListener('click', (e) => {
       e.stopPropagation();
       if (currentTemperatureC === null) {
         openLocationModal(e);
       } else {
-        toggleTemperatureUnit();
+        setUnit(currentUnit === 'fahrenheit' ? 'celsius' : 'fahrenheit');
       }
     });
   }
 
-  if (modal) {
+  if (modalEl) {
     ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
-      modal.addEventListener(evtName, (e) => e.stopPropagation());
+      modalEl.addEventListener(evtName, (e) => e.stopPropagation());
     });
-    const backdrop = modal.querySelector('.modal-backdrop');
-    if (backdrop) {
-      backdrop.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeLocationModal(e);
-      });
-    }
   }
 
   if (btnClose) {
@@ -798,67 +819,72 @@ function bindManualWeatherEvents() {
     });
   }
 
+  if (backdrop) {
+    backdrop.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeLocationModal(e);
+    });
+  }
+
+  // Opción 1: GPS Automático bajo demanda del usuario
+  if (btnGps) {
+    btnGps.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof navigator !== 'undefined' && 'geolocation' in navigator && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const loc = {
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+              name: 'Mi ubicación'
+            };
+            saveManualLocation(loc);
+            closeLocationModal();
+            fetchWeatherData(loc.lat, loc.lon, loc.name);
+          },
+          (_err) => {
+            alert('No se pudo obtener la ubicación GPS. Ingresa tu ciudad manualmente.');
+          },
+          { timeout: 7000, enableHighAccuracy: false }
+        );
+      } else {
+        alert('No se pudo obtener la ubicación GPS. Ingresa tu ciudad manualmente.');
+      }
+    });
+  }
+
+  // Opción 2: Formulario Manual
   if (form) {
     form.addEventListener('submit', handleManualLocationSubmit);
+  }
+
+  // Selectores de Unidad en el Modal (°C / °F)
+  if (btnC) {
+    btnC.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setUnit('celsius');
+    });
+  }
+
+  if (btnF) {
+    btnF.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setUnit('fahrenheit');
+    });
   }
 }
 
 function initWeatherModule() {
-  // Verificar ubicación guardada en localStorage bajo leptium_manual_location
+  updateUnitSelectorUI();
+
+  // Carga inicial desde localStorage (leptium_manual_location)
   const savedManual = getSavedManualLocation();
   if (savedManual) {
     fetchWeatherData(savedManual.lat, savedManual.lon, savedManual.name);
     return;
   }
 
-  if (typeof navigator === 'undefined' || !('geolocation' in navigator) || !navigator.geolocation) {
-    setWeatherCTAState();
-    return;
-  }
-
-  const geoOptions = {
-    enableHighAccuracy: false,
-    timeout: 6000,
-    maximumAge: 3600000 // Reutilizar coordenadas en caché hasta 1 hora
-  };
-
-  let settled = false;
-  const watchdog = setTimeout(() => {
-    if (!settled) {
-      settled = true;
-      setWeatherCTAState();
-    }
-  }, 6200);
-
-  try {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(watchdog);
-        if (position && position.coords) {
-          fetchWeatherData(position.coords.latitude, position.coords.longitude);
-        } else {
-          setWeatherCTAState();
-        }
-      },
-      (_error) => {
-        // Manejo silencioso: PERMISSION_DENIED (1), POSITION_UNAVAILABLE (2), TIMEOUT (3)
-        // o bloqueo por overlay del sistema operativo -> mostrar CTA manual
-        if (settled) return;
-        settled = true;
-        clearTimeout(watchdog);
-        setWeatherCTAState();
-      },
-      geoOptions
-    );
-  } catch (_) {
-    if (!settled) {
-      settled = true;
-      clearTimeout(watchdog);
-      setWeatherCTAState();
-    }
-  }
+  setWeatherCTAState();
 }
 
 // --------------------------------------------------------------------------

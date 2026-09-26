@@ -490,30 +490,56 @@
     </div>
   </div>
 
-  <!-- Modal minimalista de entrada manual -->
+  <!-- Modal interactivo de Ubicación del Clima -->
   <div id="manualLocationModal" class="leptium-modal" hidden>
     <div class="modal-backdrop"></div>
     <div class="modal-card">
       <div class="modal-header">
-        <span class="modal-title">Ubicación del clima</span>
+        <span class="modal-title">Configurar clima</span>
         <button id="btnCloseCityModal" type="button" class="btn-icon" aria-label="Cerrar">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <form id="formManualLocation" class="modal-form">
-        <input 
-          type="text" 
-          id="inputCitySearch" 
-          placeholder="Ingresa tu ciudad o código postal..." 
-          autocomplete="off" 
-          required 
-        />
-        <button type="submit" id="btnSaveCity" class="modal-btn-primary">Guardar</button>
-      </form>
-      <p id="citySearchError" class="modal-hint-error" hidden>No se encontró la ubicación. Intenta con una ciudad cercana.</p>
+
+      <div class="weather-config-options">
+        <!-- Opción 1: GPS Automático -->
+        <button id="btnUseCurrentLocation" type="button" class="btn-location-gps">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="7"></circle>
+            <line x1="12" y1="1" x2="12" y2="5"></line>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="1" y1="12" x2="5" y2="12"></line>
+            <line x1="19" y1="12" x2="23" y2="12"></line>
+          </svg>
+          Usar mi ubicación actual
+        </button>
+
+        <div class="modal-divider">
+          <span>o ingresar manualmente</span>
+        </div>
+
+        <!-- Opción 2: Entrada Manual -->
+        <form id="formManualLocation" class="modal-form">
+          <input 
+            type="text" 
+            id="inputCitySearch" 
+            placeholder="Ciudad o código postal..." 
+            autocomplete="off" 
+            required 
+          />
+          <button type="submit" id="btnSaveCity" class="modal-btn-primary">Buscar y fijar</button>
+        </form>
+        <p id="citySearchError" class="modal-hint-error" hidden>No se encontró la ubicación. Revisa el texto e intenta de nuevo.</p>
+
+        <!-- Selector de Unidad (°C / °F) -->
+        <div class="weather-unit-selector">
+          <span class="unit-label">Unidad de temperatura:</span>
+          <div class="unit-toggle-group">
+            <button type="button" id="btnUnitC" class="unit-btn active">°C</button>
+            <button type="button" id="btnUnitF" class="unit-btn">°F</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
