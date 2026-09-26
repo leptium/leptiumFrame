@@ -1,8 +1,13 @@
 /**
  * Servicio de clima y geolocalización adaptativo.
  * Opera en segundo plano sin bloquear el motor de diapositivas y soporta
- * anulación manual de ciudad con geocodificación Open-Meteo sin API key.
+ * geocodificación internacional multi-idioma con Open-Meteo sin API key.
  */
+export function getUserLanguageCode() {
+  const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'es';
+  return String(lang).split('-')[0].toLowerCase() || 'es';
+}
+
 export class WeatherService {
   constructor(options = {}) {
     this.defaultLat = options.latitude || null;
@@ -10,6 +15,9 @@ export class WeatherService {
     this.currentLocationStr = '';
     this.currentWeatherStr = '';
     this.currentTempStr = '--°';
+    this.currentTempC = null;
+    this.currentWeatherCode = null;
+    this.currentIsDay = 1;
     this.listeners = new Set();
   }
 
@@ -23,14 +31,18 @@ export class WeatherService {
       cb({
         locationStr: this.currentLocationStr,
         weatherStr: this.currentWeatherStr,
-        tempStr: this.currentTempStr
+        tempStr: this.currentTempStr,
+        tempC: this.currentTempC,
+        weatherCode: this.currentWeatherCode,
+        isDay: this.currentIsDay
       })
     );
   }
 
   async _reverseGeocode(lat, lon) {
+    const langCode = getUserLanguageCode();
     try {
-      const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`;
+      const bdcUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=${encodeURIComponent(langCode)}`;
       const res = await fetch(bdcUrl);
       if (res.ok) {
         const data = await res.json();
@@ -48,11 +60,11 @@ export class WeatherService {
     return '';
   }
 
-  async geocodeCity(query) {
+  async geocodeCity(query, langCode = getUserLanguageCode()) {
     const cleanQuery = String(query || '').trim();
     if (!cleanQuery) return null;
 
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanQuery)}&count=1&language=es&format=json`;
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanQuery)}&count=1&language=${encodeURIComponent(langCode)}&format=json`;
     const res = await fetch(url);
     if (!res.ok) return null;
 
@@ -66,12 +78,8 @@ export class WeatherService {
       return null;
     }
 
-    const displayName = match.admin1 && match.admin1 !== match.name
-      ? `${match.name}, ${match.admin1}`
-      : match.name;
-
     return {
-      name: displayName || cleanQuery,
+      name: match.name || cleanQuery,
       lat: match.latitude,
       lon: match.longitude
     };
@@ -104,7 +112,10 @@ export class WeatherService {
     return {
       locationStr: this.currentLocationStr,
       weatherStr: this.currentWeatherStr,
-      tempStr: this.currentTempStr
+      tempStr: this.currentTempStr,
+      tempC: this.currentTempC,
+      weatherCode: this.currentWeatherCode,
+      isDay: this.currentIsDay
     };
   }
 
@@ -116,8 +127,11 @@ export class WeatherService {
       if (res.ok) {
         const data = await res.json();
         if (data.current_weather && typeof data.current_weather.temperature === 'number') {
-          const tempC = Math.round(data.current_weather.temperature);
-          const tempF = Math.round((tempC * 9) / 5 + 32);
+          this.currentTempC = data.current_weather.temperature;
+          this.currentWeatherCode = data.current_weather.weathercode;
+          this.currentIsDay = typeof data.current_weather.is_day === 'number' ? data.current_weather.is_day : 1;
+          const tempC = Math.round(this.currentTempC);
+          const tempF = Math.round((this.currentTempC * 9) / 5 + 32);
           this.currentTempStr = `${tempC}°C`;
           this.currentWeatherStr = `${tempF}°F  /  ${tempC}°C`;
           this._notify();

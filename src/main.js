@@ -88,6 +88,7 @@ function initDOMReferences() {
   elements.clock = document.getElementById('clock');
   elements.currentDate = document.getElementById('currentDate');
   elements.weatherWidget = document.getElementById('weatherWidget');
+  elements.weatherConditionIcon = document.getElementById('weatherConditionIcon');
   elements.weatherTemp = document.getElementById('weatherTemp');
   elements.weatherCity = document.getElementById('weatherCity');
   elements.manualLocationModal = document.getElementById('manualLocationModal');
@@ -109,7 +110,10 @@ function initDOMReferences() {
   elements.iconPause = document.getElementById('icon-pause');
   elements.iconPlay = document.getElementById('icon-play');
   elements.btnInfo = document.getElementById('btnInfo');
-  elements.btnCollage = document.getElementById('btnCollage');
+  elements.btnExportCollage = document.getElementById('btnExportCollage') || document.getElementById('btnCollage');
+  elements.btnCollage = elements.btnExportCollage;
+  elements.btnAddMedia = document.getElementById('btnAddMedia');
+  elements.localMediaInput = document.getElementById('localMediaInput');
   elements.btnHidePhoto = document.getElementById('btnHidePhoto');
   elements.btnHeart = document.getElementById('btnHeart');
   elements.btnFavFilter = document.getElementById('btnFavFilter');
@@ -125,12 +129,17 @@ function initDOMReferences() {
   elements.btnToggleInfo = document.getElementById('btnToggleInfo');
   elements.infoDetailModal = document.getElementById('infoDetailModal');
   elements.collageModal = document.getElementById('collageModal');
+  elements.btnCloseCollageModal = document.getElementById('btnCloseCollageModal');
+  elements.btnAutoCollage = document.getElementById('btnAutoCollage');
+  elements.btnRenderCustomCollage = document.getElementById('btnRenderCustomCollage');
+  elements.collageSelectionCounter = document.getElementById('collageSelectionCounter');
+  elements.collagePickerGrid = document.getElementById('collagePickerGrid');
   elements.collagePreview = document.getElementById('collagePreview');
   elements.actionToolbar = document.getElementById('actionToolbar');
   elements.collageCanvas = document.getElementById('collageCanvas');
   elements.sponsorModal = document.getElementById('sponsorModal');
   elements.photoPermissionModal = document.getElementById('photoPermissionModal');
-  elements.localPhotoInput = document.getElementById('localPhotoInput');
+  elements.localPhotoInput = document.getElementById('localPhotoInput') || elements.localMediaInput;
   elements.currentSourceBadge = document.getElementById('currentSourceBadge');
   elements.cloudSyncModal = document.getElementById('cloudSyncModal');
   elements.cloudProRequiredBanner = document.getElementById('cloudProRequiredBanner');
@@ -460,11 +469,40 @@ function updateClockAndStatus() {
   }
 }
 
-const MANUAL_LOCATION_KEY = 'leptium_manual_location';
+const STORAGE_KEY_LOCATION = 'leptium_manual_location';
+const STORAGE_KEY_UNITS = 'leptium_weather_units';
+const MANUAL_LOCATION_KEY = STORAGE_KEY_LOCATION;
+
+let currentTemperatureC = null;
+let currentUnit = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY_UNITS)) || 'celsius';
+
+function getUserLanguageCode() {
+  const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'es';
+  return String(lang).split('-')[0].toLowerCase() || 'es';
+}
+
+function getWeatherConditionSvg(weatherCode, isDay = 1) {
+  if (weatherCode === 0 || weatherCode === 1) {
+    if (isDay === 0) {
+      return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+    }
+    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+  }
+  if (weatherCode >= 51 && weatherCode <= 67 || (weatherCode >= 80 && weatherCode <= 82)) {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>';
+  }
+  if (weatherCode >= 71 && weatherCode <= 77 || (weatherCode >= 85 && weatherCode <= 86)) {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M8 15h.01"></path><path d="M8 19h.01"></path><path d="M12 17h.01"></path><path d="M12 21h.01"></path><path d="M16 15h.01"></path><path d="M16 19h.01"></path></svg>';
+  }
+  if (weatherCode >= 95) {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"></path><path d="m13 12-3 5h4l-3 5"></path></svg>';
+  }
+  return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>';
+}
 
 function getSavedManualLocation() {
   try {
-    const raw = localStorage.getItem(MANUAL_LOCATION_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY_LOCATION);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (
@@ -491,7 +529,7 @@ function getSavedManualLocation() {
 function saveManualLocation(locationObj) {
   try {
     localStorage.setItem(
-      MANUAL_LOCATION_KEY,
+      STORAGE_KEY_LOCATION,
       JSON.stringify({
         name: locationObj.name,
         lat: locationObj.lat,
@@ -503,11 +541,35 @@ function saveManualLocation(locationObj) {
   }
 }
 
-function applyFallbackWeather() {
-  // Transformar el widget de clima en un llamado a la acción interactivo ("--° | Toca para fijar tu ciudad")
+function toggleTemperatureUnit() {
+  currentUnit = currentUnit === 'celsius' ? 'fahrenheit' : 'celsius';
+  try {
+    localStorage.setItem(STORAGE_KEY_UNITS, currentUnit);
+  } catch (_) {
+    // Fallo silencioso en escritura de localStorage
+  }
+  renderTemperatureDisplay();
+}
+
+function renderTemperatureDisplay() {
+  const tempEl = elements.weatherTemp || document.getElementById('weatherTemp');
+  if (!tempEl || currentTemperatureC === null || Number.isNaN(currentTemperatureC)) return;
+
+  if (currentUnit === 'fahrenheit') {
+    const fahrenheit = Math.round((currentTemperatureC * 9) / 5 + 32);
+    tempEl.textContent = `${fahrenheit}°F`;
+  } else {
+    tempEl.textContent = `${Math.round(currentTemperatureC)}°C`;
+  }
+}
+
+function setWeatherCTAState() {
   const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
   const weatherTemp = elements.weatherTemp || document.getElementById('weatherTemp');
   const weatherCity = elements.weatherCity || document.getElementById('weatherCity');
+  const conditionIcon = elements.weatherConditionIcon || document.getElementById('weatherConditionIcon');
+
+  currentTemperatureC = null;
 
   if (weatherWidget) {
     weatherWidget.classList.add('unconfigured');
@@ -519,15 +581,21 @@ function applyFallbackWeather() {
   if (weatherCity) {
     weatherCity.textContent = 'Toca para fijar tu ciudad';
   }
+  if (conditionIcon) {
+    conditionIcon.innerHTML = getWeatherConditionSvg(2, 1);
+  }
 }
 
-function updateWeatherWidgetUI({ tempStr, locationStr }) {
+const applyFallbackWeather = setWeatherCTAState;
+
+function updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay }) {
   const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
   const weatherTemp = elements.weatherTemp || document.getElementById('weatherTemp');
   const weatherCity = elements.weatherCity || document.getElementById('weatherCity');
+  const conditionIcon = elements.weatherConditionIcon || document.getElementById('weatherConditionIcon');
 
-  if (!locationStr && (!tempStr || tempStr === '--°')) {
-    applyFallbackWeather();
+  if (!locationStr && typeof tempC !== 'number' && (!tempStr || tempStr === '--°')) {
+    setWeatherCTAState();
     return;
   }
 
@@ -535,29 +603,39 @@ function updateWeatherWidgetUI({ tempStr, locationStr }) {
     weatherWidget.classList.remove('unconfigured');
     weatherWidget.style.display = 'inline-flex';
   }
-  if (weatherTemp) {
+
+  if (typeof tempC === 'number' && !Number.isNaN(tempC)) {
+    currentTemperatureC = tempC;
+    renderTemperatureDisplay();
+  } else if (weatherTemp) {
     weatherTemp.textContent = tempStr || '--°';
   }
+
   if (weatherCity) {
     weatherCity.textContent = locationStr || 'Ubicación actual';
   }
-}
 
-async function fetchWeatherData(lat, lon, manualCityName = '') {
-  try {
-    const result = await weatherService.fetchWeatherData(lat, lon, manualCityName);
-    if (result && (result.locationStr || (result.tempStr && result.tempStr !== '--°'))) {
-      updateWeatherWidgetUI(result);
-    } else {
-      applyFallbackWeather();
-    }
-  } catch (_) {
-    applyFallbackWeather();
+  if (conditionIcon && typeof weatherCode === 'number') {
+    conditionIcon.innerHTML = getWeatherConditionSvg(weatherCode, isDay);
   }
 }
 
-function openManualLocationModal(event) {
-  if (event) {
+async function fetchWeatherData(lat, lon, cityName = '') {
+  try {
+    const result = await weatherService.fetchWeatherData(lat, lon, cityName);
+    if (result && (result.locationStr || typeof result.tempC === 'number' || (result.tempStr && result.tempStr !== '--°'))) {
+      updateWeatherWidgetUI(result);
+    } else {
+      setWeatherCTAState();
+    }
+  } catch (err) {
+    console.warn('Fallo al obtener clima:', err);
+    setWeatherCTAState();
+  }
+}
+
+function openLocationModal(event) {
+  if (event && typeof event.stopPropagation === 'function') {
     event.stopPropagation();
   }
   const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
@@ -584,8 +662,10 @@ function openManualLocationModal(event) {
   }, 30);
 }
 
-function closeManualLocationModal(event) {
-  if (event) {
+const openManualLocationModal = openLocationModal;
+
+function closeLocationModal(event) {
+  if (event && typeof event.stopPropagation === 'function') {
     event.stopPropagation();
   }
   const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
@@ -598,6 +678,45 @@ function closeManualLocationModal(event) {
   }
 }
 
+const closeManualLocationModal = closeLocationModal;
+
+async function handleManualCitySubmit(query) {
+  const errEl = elements.citySearchError || document.getElementById('citySearchError');
+  if (errEl) errEl.hidden = true;
+
+  const langCode = getUserLanguageCode();
+
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=1&language=${encodeURIComponent(langCode)}&format=json`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data && data.results && data.results.length > 0) {
+      const match = data.results[0];
+      const payload = {
+        lat: match.latitude,
+        lon: match.longitude,
+        name: match.name
+      };
+
+      saveManualLocation(payload);
+      closeLocationModal();
+
+      const widget = elements.weatherWidget || document.getElementById('weatherWidget');
+      if (widget) widget.classList.remove('unconfigured');
+
+      await fetchWeatherData(payload.lat, payload.lon, payload.name);
+      return true;
+    } else {
+      if (errEl) errEl.hidden = false;
+      return false;
+    }
+  } catch (_) {
+    if (errEl) errEl.hidden = false;
+    return false;
+  }
+}
+
 async function handleManualLocationSubmit(event) {
   if (event) {
     event.preventDefault();
@@ -606,34 +725,16 @@ async function handleManualLocationSubmit(event) {
 
   const input = elements.inputCitySearch || document.getElementById('inputCitySearch');
   const btnSave = elements.btnSaveCity || document.getElementById('btnSaveCity');
-  const errorEl = elements.citySearchError || document.getElementById('citySearchError');
 
   const query = input ? input.value.trim() : '';
   if (!query) return;
 
-  if (errorEl) {
-    errorEl.hidden = true;
-  }
   if (btnSave) {
     btnSave.disabled = true;
   }
 
   try {
-    const geoResult = await weatherService.geocodeCity(query);
-    if (!geoResult) {
-      if (errorEl) {
-        errorEl.hidden = false;
-      }
-      return;
-    }
-
-    saveManualLocation(geoResult);
-    await fetchWeatherData(geoResult.lat, geoResult.lon, geoResult.name);
-    closeManualLocationModal();
-  } catch (_) {
-    if (errorEl) {
-      errorEl.hidden = false;
-    }
+    await handleManualCitySubmit(query);
   } finally {
     if (btnSave) {
       btnSave.disabled = false;
@@ -643,6 +744,7 @@ async function handleManualLocationSubmit(event) {
 
 function bindManualWeatherEvents() {
   const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  const tempEl = elements.weatherTemp || document.getElementById('weatherTemp');
   const modal = elements.manualLocationModal || document.getElementById('manualLocationModal');
   const btnClose = elements.btnCloseCityModal || document.getElementById('btnCloseCityModal');
   const form = elements.formManualLocation || document.getElementById('formManualLocation');
@@ -653,13 +755,25 @@ function bindManualWeatherEvents() {
     });
     weatherWidget.addEventListener('click', (e) => {
       e.stopPropagation();
-      openManualLocationModal(e);
+      openLocationModal(e);
     });
     weatherWidget.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
-        openManualLocationModal(e);
+        openLocationModal(e);
+      }
+    });
+  }
+
+  // Alternar unidad (°C <-> °F) al tocar la temperatura si ya hay clima cargado
+  if (tempEl) {
+    tempEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentTemperatureC === null) {
+        openLocationModal(e);
+      } else {
+        toggleTemperatureUnit();
       }
     });
   }
@@ -672,7 +786,7 @@ function bindManualWeatherEvents() {
     if (backdrop) {
       backdrop.addEventListener('click', (e) => {
         e.stopPropagation();
-        closeManualLocationModal(e);
+        closeLocationModal(e);
       });
     }
   }
@@ -680,7 +794,7 @@ function bindManualWeatherEvents() {
   if (btnClose) {
     btnClose.addEventListener('click', (e) => {
       e.stopPropagation();
-      closeManualLocationModal(e);
+      closeLocationModal(e);
     });
   }
 
@@ -690,7 +804,7 @@ function bindManualWeatherEvents() {
 }
 
 function initWeatherModule() {
-  // Priorizar ubicación manual persistida en localStorage bajo leptium_manual_location
+  // Verificar ubicación guardada en localStorage bajo leptium_manual_location
   const savedManual = getSavedManualLocation();
   if (savedManual) {
     fetchWeatherData(savedManual.lat, savedManual.lon, savedManual.name);
@@ -698,7 +812,7 @@ function initWeatherModule() {
   }
 
   if (typeof navigator === 'undefined' || !('geolocation' in navigator) || !navigator.geolocation) {
-    applyFallbackWeather();
+    setWeatherCTAState();
     return;
   }
 
@@ -712,7 +826,7 @@ function initWeatherModule() {
   const watchdog = setTimeout(() => {
     if (!settled) {
       settled = true;
-      applyFallbackWeather();
+      setWeatherCTAState();
     }
   }, 6200);
 
@@ -725,7 +839,7 @@ function initWeatherModule() {
         if (position && position.coords) {
           fetchWeatherData(position.coords.latitude, position.coords.longitude);
         } else {
-          applyFallbackWeather();
+          setWeatherCTAState();
         }
       },
       (_error) => {
@@ -734,7 +848,7 @@ function initWeatherModule() {
         if (settled) return;
         settled = true;
         clearTimeout(watchdog);
-        applyFallbackWeather();
+        setWeatherCTAState();
       },
       geoOptions
     );
@@ -742,7 +856,7 @@ function initWeatherModule() {
     if (!settled) {
       settled = true;
       clearTimeout(watchdog);
-      applyFallbackWeather();
+      setWeatherCTAState();
     }
   }
 }
@@ -1400,36 +1514,221 @@ async function downloadCurrentImage(e) {
 
 const guardarFotoActual = downloadCurrentImage;
 
+let selectedCollagePhotos = [];
+
+async function storeUploadedPhotosInDB(files) {
+  if (!Array.isArray(files) || files.length === 0) return;
+
+  for (const file of files) {
+    try {
+      await FenixDB.addPhoto(file, file.name);
+    } catch (dbErr) {
+      console.warn('[FenixDB] Error guardando foto:', dbErr);
+    }
+  }
+
+  await loadLocalDatabasePhotos();
+  actualizarFuenteUI('local');
+  indexYearsFromCatalog(userLocalPhotos);
+  rebuildYearFilter();
+  const { hiddenPhotos } = store.getState();
+  activeFotos = userLocalPhotos.filter((item) => !isPhotoHidden(item, hiddenPhotos));
+
+  if (elements.emptyStateContainer) {
+    elements.emptyStateContainer.style.display = 'none';
+  }
+
+  if (checkPhotoAvailability(userLocalPhotos.length, activeFotos.length)) {
+    store.setCurrentIndex(0);
+    renderSlide();
+    startInterval();
+  }
+
+  showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
+}
+
+async function getAllPhotosFromDB() {
+  try {
+    const dbPhotos = await FenixDB.getAllPhotos();
+    if (Array.isArray(dbPhotos) && dbPhotos.length > 0) {
+      return dbPhotos;
+    }
+  } catch (err) {
+    console.warn('[FenixDB] Error obteniendo fotos para collage:', err);
+  }
+
+  // Respaldo con catálogo activo si aún no hay blobs en IndexedDB
+  const fallbackPool = Array.isArray(activeFotos) && activeFotos.length > 0 ? activeFotos : getCatalogoFotos();
+  return fallbackPool.map((item, idx) => ({
+    id: obtenerPhotoId(item) || `catalog-${idx}`,
+    blob: item && item.blob ? item.blob : null,
+    ruta: obtenerRuta(item)
+  }));
+}
+
+async function populateCollageThumbnailGrid() {
+  const grid = elements.collagePickerGrid || document.getElementById('collagePickerGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const photos = await getAllPhotosFromDB();
+  photos.forEach((photo) => {
+    const item = document.createElement('div');
+    item.className = 'collage-thumb-item';
+    item.dataset.photoId = String(photo.id);
+
+    const img = document.createElement('img');
+    img.alt = '';
+    if (photo.blob instanceof Blob) {
+      const thumbUrl = URL.createObjectURL(photo.blob);
+      img.src = thumbUrl;
+      img.onload = () => URL.revokeObjectURL(thumbUrl);
+    } else if (photo.ruta) {
+      img.src = photo.ruta;
+    }
+
+    item.appendChild(img);
+
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleCollageSelection(photo, item);
+    });
+
+    grid.appendChild(item);
+  });
+}
+
+function refreshCollageBadges() {
+  const grid = elements.collagePickerGrid || document.getElementById('collagePickerGrid');
+  if (!grid) return;
+  const items = grid.querySelectorAll('.collage-thumb-item');
+  items.forEach((el) => {
+    const id = el.dataset.photoId;
+    const idx = selectedCollagePhotos.findIndex((p) => String(p.id) === String(id));
+    let badge = el.querySelector('.badge-order');
+    if (idx >= 0) {
+      el.classList.add('selected');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge-order';
+        el.appendChild(badge);
+      }
+      badge.textContent = String(idx + 1);
+    } else {
+      el.classList.remove('selected');
+      if (badge) badge.remove();
+    }
+  });
+}
+
+function toggleCollageSelection(photo, element) {
+  const index = selectedCollagePhotos.findIndex((p) => String(p.id) === String(photo.id));
+  if (index >= 0) {
+    selectedCollagePhotos.splice(index, 1);
+    element.classList.remove('selected');
+    const badge = element.querySelector('.badge-order');
+    if (badge) badge.remove();
+    refreshCollageBadges();
+  } else if (selectedCollagePhotos.length < 4) {
+    selectedCollagePhotos.push(photo);
+    element.classList.add('selected');
+    const badge = document.createElement('span');
+    badge.className = 'badge-order';
+    badge.textContent = String(selectedCollagePhotos.length);
+    element.appendChild(badge);
+  }
+  updateCollageSelectionUI();
+}
+
+function updateCollageSelectionUI() {
+  const counter = elements.collageSelectionCounter || document.getElementById('collageSelectionCounter');
+  const btnRender = elements.btnRenderCustomCollage || document.getElementById('btnRenderCustomCollage');
+  if (counter) counter.textContent = `Seleccionadas: ${selectedCollagePhotos.length} / 4`;
+  if (btnRender) btnRender.disabled = selectedCollagePhotos.length !== 4;
+}
+
+async function renderCollageFromBlobs(photos) {
+  if (!Array.isArray(photos) || photos.length === 0) return;
+
+  elements.overlay.classList.remove('paused-hidden');
+  setOverlayMetaLines([{ icon: icons.wand, text: i18n.t('collage.assembling') || 'Generando collage...' }]);
+
+  const tempBlobUrls = [];
+  const seleccion = photos.slice(0, 4).map((photo) => {
+    if (photo && photo.blob instanceof Blob) {
+      const url = URL.createObjectURL(photo.blob);
+      tempBlobUrls.push(url);
+      return url;
+    }
+    return obtenerRuta(photo);
+  }).filter(Boolean);
+
+  while (seleccion.length > 0 && seleccion.length < 4) {
+    seleccion.push(seleccion[seleccion.length % seleccion.length]);
+  }
+
+  try {
+    const watermarkText = i18n.t('collage.watermark');
+    const qrPromptText = i18n.t('collage.scanPrompt');
+    const showWatermark = !licenseManager.isPaid();
+    const currentLang = typeof i18n.getLanguage === 'function' ? i18n.getLanguage() : 'en';
+    collageDataUrl = await collageEngine.generate2x2(
+      seleccion,
+      elements.collageCanvas,
+      watermarkText,
+      qrPromptText,
+      showWatermark,
+      currentLang
+    );
+    if (elements.collagePreview) {
+      elements.collagePreview.src = collageDataUrl;
+    }
+    await exportCollageCanvas(elements.collageCanvas);
+    const { isPaused } = store.getState();
+    if (isPaused) elements.overlay.classList.add('paused-hidden');
+    else renderSlide();
+  } catch (err) {
+    console.error('Error generando collage:', err);
+    setOverlayMetaLines([{ icon: icons.warning, text: i18n.t('app.errors.collageFailed') || 'Error al generar collage' }]);
+  } finally {
+    setTimeout(() => {
+      tempBlobUrls.forEach((u) => URL.revokeObjectURL(u));
+    }, 2000);
+  }
+}
+
+async function generateAutomaticCollage() {
+  const pool = Array.isArray(activeFotos) && activeFotos.length > 0 ? activeFotos : getCatalogoFotos();
+  await ejecutarEnsambladoCollage(pool);
+}
+
 async function generarCollage(e) {
   if (e) {
     if (typeof e.stopPropagation === 'function') e.stopPropagation();
     if (typeof e.preventDefault === 'function') e.preventDefault();
   }
 
-  // Si hay fotos visibles en reproducción (locales, nube o catálogo demo), ensamblar collage directo
-  // garantizando la foto activa en el cuadrante superior izquierdo + 3 aleatorias
-  if (Array.isArray(activeFotos) && activeFotos.length > 0) {
-    await ejecutarEnsambladoCollage(activeFotos);
-    return;
+  const modal = elements.collageModal || document.getElementById('collageModal');
+  selectedCollagePhotos = [];
+  updateCollageSelectionUI();
+  await populateCollageThumbnailGrid();
+  if (modal) {
+    modal.hidden = false;
   }
-
-  await ejecutarEnsambladoCollage(getCatalogoFotos());
 }
 
 async function ejecutarEnsambladoCollage(fotosDisponibles) {
   elements.overlay.classList.remove('paused-hidden');
-  setOverlayMetaLines([{ icon: icons.wand, text: i18n.t('collage.assembling') }]);
+  setOverlayMetaLines([{ icon: icons.wand, text: i18n.t('collage.assembling') || 'Generando collage...' }]);
 
   const { currentIndex, hiddenPhotos } = store.getState();
   const rawPool = (Array.isArray(fotosDisponibles) && fotosDisponibles.length > 0)
     ? fotosDisponibles
     : (Array.isArray(activeFotos) && activeFotos.length > 0 ? activeFotos : getCatalogoFotos());
 
-  // Filtrar fotos ocultas de la reserva disponible
   const visiblePool = rawPool.filter((item) => !isPhotoHidden(item, hiddenPhotos));
   const effectivePool = visiblePool.length > 0 ? visiblePool : rawPool;
 
-  // Foto activa actual obligatoria en el primer cuadrante (superior izquierdo)
   const currentPhoto = (Array.isArray(activeFotos) && activeFotos[currentIndex])
     ? activeFotos[currentIndex]
     : effectivePool[0];
@@ -1443,8 +1742,10 @@ async function ejecutarEnsambladoCollage(fotosDisponibles) {
     const showWatermark = !licenseManager.isPaid();
     const currentLang = typeof i18n.getLanguage === 'function' ? i18n.getLanguage() : 'en';
     collageDataUrl = await collageEngine.generate2x2(seleccion, elements.collageCanvas, watermarkText, qrPromptText, showWatermark, currentLang);
-    elements.collagePreview.src = collageDataUrl;
-    elements.collageModal.style.display = 'flex';
+    if (elements.collagePreview) {
+      elements.collagePreview.src = collageDataUrl;
+    }
+    await exportCollageCanvas(elements.collageCanvas);
     const { isPaused } = store.getState();
     if (isPaused) elements.overlay.classList.add('paused-hidden');
     else renderSlide();
@@ -1454,13 +1755,98 @@ async function ejecutarEnsambladoCollage(fotosDisponibles) {
   }
 }
 
-function cerrarCollageModal() {
-  if (elements.collageModal) elements.collageModal.style.display = 'none';
+function cerrarCollageModal(e) {
+  if (e && typeof e.stopPropagation === 'function') {
+    e.stopPropagation();
+  }
+  const modal = elements.collageModal || document.getElementById('collageModal');
+  if (modal) {
+    modal.hidden = true;
+  }
   if (elements.collagePreview) {
     elements.collagePreview.src = '';
     elements.collagePreview.removeAttribute('src');
   }
   collageDataUrl = '';
+}
+
+function initAddMediaAndCollage() {
+  const btnAdd = elements.btnAddMedia || document.getElementById('btnAddMedia');
+  const fileInput = elements.localMediaInput || document.getElementById('localMediaInput');
+  const btnCollage = elements.btnExportCollage || document.getElementById('btnExportCollage') || document.getElementById('btnCollage');
+  const modal = elements.collageModal || document.getElementById('collageModal');
+  const btnClose = elements.btnCloseCollageModal || document.getElementById('btnCloseCollageModal');
+  const btnAuto = elements.btnAutoCollage || document.getElementById('btnAutoCollage');
+  const btnRender = elements.btnRenderCustomCollage || document.getElementById('btnRenderCustomCollage');
+
+  if (btnAdd && fileInput) {
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      btnAdd.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+    btnAdd.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        await storeUploadedPhotosInDB(files);
+        fileInput.value = '';
+      }
+    });
+  }
+
+  if (btnCollage) {
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      btnCollage.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+    btnCollage.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      selectedCollagePhotos = [];
+      updateCollageSelectionUI();
+      await populateCollageThumbnailGrid();
+      if (modal) modal.hidden = false;
+    });
+  }
+
+  if (modal) {
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      modal.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        cerrarCollageModal(e);
+      });
+    }
+  }
+
+  if (btnClose) {
+    btnClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (modal) modal.hidden = true;
+    });
+  }
+
+  if (btnAuto) {
+    btnAuto.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (modal) modal.hidden = true;
+      await generateAutomaticCollage();
+    });
+  }
+
+  if (btnRender) {
+    btnRender.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (selectedCollagePhotos.length === 4) {
+        if (modal) modal.hidden = true;
+        await renderCollageFromBlobs(selectedCollagePhotos);
+      }
+    });
+  }
 }
 
 async function exportCollageCanvas(canvasElement = elements.collageCanvas) {
@@ -1612,9 +1998,12 @@ async function bootstrap() {
   // Vincular eventos interactivos del widget de clima y modal de ubicación manual
   bindManualWeatherEvents();
 
+  // Vincular botón de agregar fotografías (+) y modal selector de collage 2x2
+  initAddMediaAndCollage();
+
   // Suscripción reactiva del módulo de clima y geolocalización (iniciado en segundo plano sin bloqueo)
-  weatherService.subscribe(({ locationStr, weatherStr, tempStr }) => {
-    updateWeatherWidgetUI({ tempStr, locationStr });
+  weatherService.subscribe(({ locationStr, weatherStr, tempStr, tempC, weatherCode, isDay }) => {
+    updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay });
     if (elements.deviceLocation) {
       if (locationStr) {
         elements.deviceLocation.innerHTML = `${icons.location} ${locationStr}`;
@@ -1709,11 +2098,9 @@ async function bootstrap() {
 
       if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+      if (elements.collageModal && !elements.collageModal.hidden) return;
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') {
         closeSettings();
-        return;
-      }
-      if (elements.collageModal && elements.collageModal.style.display === 'flex') {
         return;
       }
 
@@ -1749,11 +2136,9 @@ async function bootstrap() {
 
       if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+      if (elements.collageModal && !elements.collageModal.hidden) return;
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') {
         closeSettings();
-        return;
-      }
-      if (elements.collageModal && elements.collageModal.style.display === 'flex') {
         return;
       }
 
@@ -1795,14 +2180,18 @@ async function bootstrap() {
         closeManualLocationModal(e);
         return;
       }
+      if (elements.collageModal && !elements.collageModal.hidden) {
+        cerrarCollageModal(e);
+        return;
+      }
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') closeSettings();
-      if (elements.collageModal && elements.collageModal.style.display === 'flex') cerrarCollageModal();
       if (elements.infoDetailModal && elements.infoDetailModal.style.display === 'block') cerrarInfoDetallada();
       return;
     }
 
-    // No interceptar teclas si el modal de ubicación está abierto o si el foco está en un campo de texto
+    // No interceptar teclas si algún modal está abierto o si el foco está en un campo de texto
     if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+    if (elements.collageModal && !elements.collageModal.hidden) return;
     if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
     if (e.key === 'ArrowRight') {
