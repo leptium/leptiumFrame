@@ -3,7 +3,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: screen-wake-lock=(self), share=(self), geolocation=(self)
-  Content-Security-Policy: default-src 'self' https://*.pages.dev https://leptiumframe.app; script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; media-src 'self' blob:; connect-src 'self' https://*.pages.dev https://leptiumframe.app https://api.lemonsqueezy.com https://api.open-meteo.com https://*.bigdatacloud.net https://nominatim.openstreetmap.org https://wttr.in https://ipwho.is; frame-src 'self' https://leptiumframe.app https://*.pages.dev https://*.lemonsqueezy.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';
+  Content-Security-Policy: default-src 'self' https://*.pages.dev https://leptiumframe.app; script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https:; media-src 'self' blob:; connect-src 'self' blob: https://*.pages.dev https://leptiumframe.app https://api.lemonsqueezy.com https://api.open-meteo.com https://*.bigdatacloud.net https://nominatim.openstreetmap.org https://wttr.in https://ipwho.is; frame-src 'self' https://leptiumframe.app https://*.pages.dev https://*.lemonsqueezy.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';
 
 /sw.js
   Cache-Control: public, max-age=0, must-revalidate

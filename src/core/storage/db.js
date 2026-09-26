@@ -103,6 +103,26 @@ export const FenixDB = (() => {
     });
   }
 
+  async function getPhotoById(id) {
+    const database = await open();
+    if (!database || id === undefined || id === null) return null;
+
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const numericId = Number(id);
+      const key = Number.isNaN(numericId) ? id : numericId;
+      const req = store.get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function getPhotoBlobById(id) {
+    const record = await getPhotoById(id);
+    return record?.blob || null;
+  }
+
   async function purgeDatabase() {
     return clearAll();
   }
@@ -111,6 +131,8 @@ export const FenixDB = (() => {
     open,
     addPhoto,
     getAllPhotos,
+    getPhotoById,
+    getPhotoBlobById,
     getPhotoCount,
     deletePhoto,
     clearAll,

@@ -1,5 +1,19 @@
 import { IMediaPicker } from '../interfaces/IMediaPicker.js';
 
+function dataUrlToBlob(dataUrl) {
+  const parts = String(dataUrl).split(',');
+  const header = parts[0] || '';
+  const base64 = parts[1] || '';
+  const mimeMatch = header.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
 export class WebMediaPicker extends IMediaPicker {
   async pickPhotos(options = { multiple: true }) {
     return new Promise((resolve) => {
@@ -29,65 +43,57 @@ export class WebMediaPicker extends IMediaPicker {
     });
   }
 
-  async saveImage(dataUrl, filename = 'collage.jpg') {
+  async saveImage(source, filename = 'collage.jpg') {
     try {
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
+      let blob = null;
+      if (source instanceof Blob) {
+        blob = source;
+      } else if (typeof source === 'string' && source.startsWith('data:')) {
+        blob = dataUrlToBlob(source);
+      }
 
-      // En dispositivos táctiles / móviles, priorizar Web Share API con archivos (permite guardar en Carrete iOS/Android o compartir)
-      const isTouchDevice = typeof window !== 'undefined' && (
-        window.matchMedia('(pointer: coarse)').matches ||
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0
-      );
+      if (!blob) {
+        throw new Error('No se pudo obtener el binario de la imagen');
+      }
 
-      if (isTouchDevice && typeof navigator !== 'undefined' && typeof navigator.share === 'function' && typeof File !== 'undefined') {
+      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+
+      // En dispositivos táctiles / móviles, priorizar Web Share API si está soportada
+      const isTouchDevice =
+        typeof window !== 'undefined' &&
+        (window.matchMedia('(pointer: coarse)').matches ||
+          'ontouchstart' in window ||
+          navigator.maxTouchPoints > 0);
+
+      if (
+        isTouchDevice &&
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] })
+      ) {
         try {
-          const file = new File([blob], filename, { type: 'image/jpeg' });
-          if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              files: [file],
-              title: 'leptium FenixFrame'
-            });
-            return { ok: true, filename };
-          }
+          await navigator.share({
+            files: [file],
+            title: 'leptium FenixFrame',
+            text: 'Collage generado desde mi lienzo digital.'
+          });
+          return { ok: true, filename };
         } catch (shareErr) {
           if (shareErr.name === 'AbortError') {
             return { ok: false, error: 'Guardado cancelado por el usuario' };
           }
-          // Fallback si falla Web Share API
         }
       }
 
-      // Si la API File System Access está disponible en navegadores de escritorio modernos
-      if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
-        try {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [{
-              description: 'JPEG Image',
-              accept: { 'image/jpeg': ['.jpg', '.jpeg'] }
-            }]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(blob);
-          await writable.close();
-          return { ok: true, filename };
-        } catch (pickerErr) {
-          if (pickerErr.name === 'AbortError') {
-            return { ok: false, error: 'Guardado cancelado por el usuario' };
-          }
-          // Fallback al método tradicional de descarga si falla
-        }
-      }
-
-      // Método universal compatible: descarga vía elemento ancla
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // Fallback universal: Descarga directa con URL temporal de objeto
+      const tempUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = tempUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(tempUrl), 1000);
 
       return { ok: true, filename };
     } catch (err) {

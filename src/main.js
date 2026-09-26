@@ -240,14 +240,26 @@ function isPhotoHidden(item, hiddenMap) {
 // Colección curada de respaldo local para primer arranque (First-Run Empty State)
 const fotosDemo = DEMO_CATALOG;
 
+async function getPhotoBlobFromIndexedDB(id) {
+  try {
+    return await FenixDB.getPhotoBlobById(id);
+  } catch (e) {
+    console.warn('[FenixDB] Error recuperando blob por ID:', e);
+    return null;
+  }
+}
+
 async function loadLocalDatabasePhotos() {
   try {
     const dbPhotos = await FenixDB.getAllPhotos();
     if (dbPhotos && dbPhotos.length > 0) {
       // Revocar explícitamente URLs de blob anteriores para evitar memory leaks en WebKit
       clearAllBlobUrls();
-      userLocalPhotos = dbPhotos.map(p => ({
+      userLocalPhotos = dbPhotos.map((p) => ({
         id: p.id,
+        blob: p.blob,
+        name: (p.filename || `foto-${p.id}`).replace(/\.[a-z0-9]+$/i, ''),
+        filename: p.filename || `foto-${p.id}.jpg`,
         ruta: trackBlobUrl(URL.createObjectURL(p.blob)),
         fecha: new Date(p.addedAt).toLocaleDateString(),
         camara: 'FenixFrameDB',
@@ -1005,56 +1017,79 @@ function cerrarInfoDetallada() {
 // --------------------------------------------------------------------------
 // Guardado de Fotos y Collages (Reemplaza el servidor Python por HAL)
 // --------------------------------------------------------------------------
-async function guardarFotoActual(e) {
-  if (e) {
-    e.stopPropagation();
-    e.preventDefault();
-  }
+function domImageToBlob(imgElement) {
+  return new Promise((resolve) => {
+    if (!imgElement || !(imgElement.naturalWidth || imgElement.width)) {
+      resolve(null);
+      return;
+    }
+    try {
+      const c = document.createElement('canvas');
+      c.width = imgElement.naturalWidth || imgElement.width;
+      c.height = imgElement.naturalHeight || imgElement.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(imgElement, 0, 0);
+      c.toBlob(
+        (b) => {
+          c.width = 1;
+          c.height = 1;
+          resolve(b || null);
+        },
+        'image/jpeg',
+        0.92
+      );
+    } catch (_) {
+      resolve(null);
+    }
+  });
+}
 
-  const rutaExacta = elements.img.src;
-  if (!rutaExacta) return;
+async function downloadCurrentImage(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
 
   elements.overlay.classList.remove('paused-hidden');
   setOverlayMetaLines([{ icon: icons.camera, text: i18n.t('app.savingDevice') || 'Guardando en dispositivo...' }]);
 
   try {
-    const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
-    const filename = `leptium_${timestamp}.jpg`;
+    // 1. Obtener el blob original directamente de IndexedDB mediante el ID de la foto activa
+    // (o desde la referencia al Blob en memoria del carrusel, nunca desde fetch(img.src))
+    const { currentIndex } = store.getState();
+    const activePhoto = Array.isArray(activeFotos) ? activeFotos[currentIndex] : null;
+    let blob = activePhoto?.blob || null;
 
-    // Si es una ruta HTTP o local, convertir a dataURL a través de un canvas temporal
-    const tempImg = new Image();
-    tempImg.crossOrigin = 'anonymous';
-
-    await new Promise((resolve, reject) => {
-      tempImg.onload = resolve;
-      tempImg.onerror = reject;
-      tempImg.src = rutaExacta;
-    });
-
-    const c = document.createElement('canvas');
-    c.width = tempImg.naturalWidth || tempImg.width;
-    c.height = tempImg.naturalHeight || tempImg.height;
-    const ctx = c.getContext('2d');
-    ctx.drawImage(tempImg, 0, 0);
-    const dataUrl = c.toDataURL('image/jpeg', 0.90);
-
-    tempImg.onload = null;
-    tempImg.onerror = null;
-    tempImg.src = '';
-    tempImg.removeAttribute('src');
-    c.width = 1;
-    c.height = 1;
-
-    // Llamada unificada a través del HAL
-    const resultado = await MediaPicker.saveImage(dataUrl, filename);
-
-    if (resultado.ok) {
-      setOverlayMetaLines([{ icon: icons.successCheck, text: i18n.t('app.saved') || 'Guardada con éxito' }]);
-    } else {
-      setOverlayMetaLines([{ icon: icons.warning, text: resultado.error || 'No se pudo guardar' }]);
+    if (!blob && activePhoto?.id !== undefined && activePhoto?.id !== null) {
+      blob = await getPhotoBlobFromIndexedDB(activePhoto.id);
     }
-  } catch (err) {
-    setOverlayMetaLines([{ icon: icons.warning, text: err.message }]);
+
+    // Si es una foto del catálogo demo ya decodificada en el DOM, extraer binario directo desde el nodo <img>
+    if (!blob && elements.img) {
+      blob = await domImageToBlob(elements.img);
+    }
+
+    if (!blob) {
+      throw new Error('No se pudo recuperar el binario de la imagen');
+    }
+
+    // 2. Crear URL temporal exclusiva para la descarga
+    const rawName = (activePhoto?.name || activePhoto?.id || Date.now()).toString().replace(/\.[a-z0-9]+$/i, '');
+    const tempUrl = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = tempUrl;
+    downloadLink.download = `fenixframe-${rawName}.jpg`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    // 3. Revocar inmediatamente el puntero temporal
+    setTimeout(() => URL.revokeObjectURL(tempUrl), 1000);
+
+    setOverlayMetaLines([{ icon: icons.successCheck, text: i18n.t('app.saved') || 'Guardada con éxito' }]);
+  } catch (error) {
+    console.error('Error al descargar fotografia:', error);
+    setOverlayMetaLines([{ icon: icons.warning, text: error.message || 'No se pudo guardar' }]);
   }
 
   setTimeout(() => {
@@ -1066,6 +1101,8 @@ async function guardarFotoActual(e) {
     }
   }, 2000);
 }
+
+const guardarFotoActual = downloadCurrentImage;
 
 async function generarCollage(e) {
   if (e) {
@@ -1130,6 +1167,62 @@ function cerrarCollageModal() {
   collageDataUrl = '';
 }
 
+async function exportCollageCanvas(canvasElement = elements.collageCanvas) {
+  if (!canvasElement || typeof canvasElement.toBlob !== 'function') {
+    console.error('Error al convertir canvas a blob');
+    return;
+  }
+
+  return new Promise((resolve) => {
+    canvasElement.toBlob(
+      async (blob) => {
+        if (!blob) {
+          console.error('Error al convertir canvas a blob');
+          resolve(false);
+          return;
+        }
+
+        const file = new File([blob], `fenixframe-collage-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+        // Intentar Web Share API si está soportada en dispositivos táctiles
+        const isTouch =
+          typeof window !== 'undefined' &&
+          window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+        if (isTouch && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'leptium FenixFrame Collage',
+              text: 'Collage generado desde mi lienzo digital.'
+            });
+            resolve(true);
+            return;
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              resolve(false);
+              return;
+            }
+            console.error('Share error:', err);
+          }
+        }
+
+        // Fallback: Descarga directa en disco
+        const tempUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = tempUrl;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(tempUrl), 1000);
+        resolve(true);
+      },
+      'image/jpeg',
+      0.92
+    );
+  });
+}
 
 async function compartirCollageGenerado() {
   const btnGuardar = document.querySelector('.btn-modal-share');
@@ -1138,12 +1231,9 @@ async function compartirCollageGenerado() {
     btnGuardar.disabled = true;
   }
 
-  const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
-  const filename = `collage_${timestamp}.jpg`;
-
   try {
-    const resultado = await MediaPicker.saveImage(collageDataUrl, filename);
-    if (resultado.ok) {
+    const ok = await exportCollageCanvas(elements.collageCanvas);
+    if (ok) {
       if (btnGuardar) btnGuardar.innerText = i18n.t('app.saved') || '¡Guardado!';
       setTimeout(() => {
         cerrarCollageModal();
@@ -1152,12 +1242,9 @@ async function compartirCollageGenerado() {
           btnGuardar.disabled = false;
         }
       }, 1000);
-    } else {
-      showHudToast(`Error: ${resultado.error || 'No se pudo guardar'}`, 'error');
-      if (btnGuardar) {
-        btnGuardar.innerText = i18n.t('app.saveCollage') || 'Guardar Collage';
-        btnGuardar.disabled = false;
-      }
+    } else if (btnGuardar) {
+      btnGuardar.innerText = i18n.t('app.saveCollage') || 'Guardar Collage';
+      btnGuardar.disabled = false;
     }
   } catch (e) {
     showHudToast(`Error guardando: ${e.message}`, 'error');
@@ -1466,9 +1553,11 @@ async function bootstrap() {
   window.toggleFavorita = toggleFavorita;
   window.toggleModoFavoritas = toggleModoFavoritas;
   window.guardarFotoActual = guardarFotoActual;
+  window.downloadCurrentImage = downloadCurrentImage;
   window.generarCollage = generarCollage;
   window.cerrarCollageModal = cerrarCollageModal;
   window.compartirCollageGenerado = compartirCollageGenerado;
+  window.exportCollageCanvas = exportCollageCanvas;
   window.toggleInfoDetallada = toggleInfoDetallada;
   window.closePhotoPermissionModal = () => {
     if (elements.photoPermissionModal) {
