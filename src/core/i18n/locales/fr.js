@@ -20,11 +20,12 @@ export const fr = {
     backHome: "Retour à l'accueil"
   },
   hero: {
-    badge: "leptium FenixFrame 2.0 • Conçu pour iPad, Android et Écrans 24/7",
+    brandTitle: "leptium FenixFrame 2.0",
+    badge: "Conçu pour iPad, Android et Écrans 24/7",
     title: "Le cadre photo numérique",
     titleHighlight: "le plus élégant jamais créé.",
     subtitle: "Vos plus beaux souvenirs ne devraient pas rester enfermés dans un disque dur ou oubliés dans le cloud. Transformez n'importe quel iPad ou tablette en œuvre d'art ambiante 24/7 avec Glassmorphism, météo en direct et protection anti-brûlure OLED.",
-    ctaBuy: "Obtenir Licence Pro • 9,99 $",
+    ctaBuy: "Obtenir Licence Basic • 29 $",
     ctaOpen: "Essayer Gratuitement",
     demoBadge: "Démo en Direct • Cliquez sur les bords pour changer de photo ou au centre pour pause"
   },
@@ -77,7 +78,7 @@ export const fr = {
     ourCol: "leptium FenixFrame",
     initialCost: "Coût Initial",
     initialCostCompetitor: "130 $ - 190 $ USD (matériel imposé en plastique)",
-    initialCostOur: "0 $ - 9,99 $ USD (réutilisez votre tablette)",
+    initialCostOur: "0 $ - 29 $ USD (réutilisez votre tablette)",
     subscription: "Abonnement Annuel",
     subscriptionCompetitor: "39 $ - 49 $ USD / an obligatoires",
     subscriptionOur: "0 $ (Aucun frais récurrent)",
@@ -107,30 +108,30 @@ export const fr = {
       desc: "Idéal pour réutiliser immédiatement une vieille tablette.",
       f1: "Cadre photo numérique fonctionnel",
       f2: "Horloge typographique et date",
-      f3: "Mode Local : jusqu'à 200 photos en mémoire",
+      f3: "Mode Local Air-Gapped : jusqu'à 200 photos",
       fCloud: "Sans synchronisation cloud (local uniquement)",
-      f4: "Recommandations d'accessoires avec QR Code",
+      f4: "Recommandations QR non intrusives",
       cta: "Lancer la Version Gratuite"
     },
     basic: {
-      title: "Basique (Sans Pub)",
-      price: "4,99 $",
+      title: "Basic (Sans Pub)",
+      price: "29 $",
       period: "USD / paiement unique",
       desc: "Sérénité totale sans aucune publicité pour votre foyer.",
       f1: "Zéro publicité ni interruption QR",
-      f2: "Mode Local : jusqu'à 1 000 photos enregistrées",
+      f2: "Photos locales illimitées (Air-Gapped)",
       fCloud: "Sans synchronisation cloud (local uniquement)",
       f3: "Widget météo dynamique",
       f4: "Atténuation nocturne automatique",
       f5: "1 appareil par licence",
-      cta: "Acheter Basique"
+      cta: "Obtenir Licence Basic"
     },
     premium: {
       title: "Premium Pro",
-      price: "9,99 $",
+      price: "59 $",
       period: "USD / paiement unique",
       desc: "L'expérience complète ultime pour toute la famille.",
-      fCloud: "Connexion Cloud Personnel (Google Photos, iCloud, WebDAV)",
+      fCloud: "Synchronisation WebDAV, NAS et Cloud Personnel (iCloud, Google Photos)",
       f1: "Zéro pub et photos illimitées (Local + Cloud)",
       f2: "Bouclier Anti-Brûlure actif 24/7",
       f3: "Export de collages 2x2 en 4K illimité",
@@ -139,8 +140,8 @@ export const fr = {
       cta: "Acheter Licence Pro"
     },
     maker: {
-      title: "Maker / Licence Source",
-      price: "39,00 $",
+      title: "Maker / Source License",
+      price: "129 $",
       period: "USD / paiement unique",
       desc: "Accès complet au code source pour développeurs et passionnés.",
       fCloud: "Inclut le Cloud Personnel et la Licence Pro",
@@ -311,7 +312,7 @@ export const fr = {
     cancelBtn: "Annuler",
     assembling: "Assemblage du collage 2x2...",
     downloadingUnsplash: "Téléchargement des photos Unsplash et assemblage...",
-    watermark: "leptium FenixFrame • Le cadre intelligent pour vos photos • leptiumframe.app • 9,99 $",
+    watermark: "leptium FenixFrame • Le cadre intelligent pour vos photos • leptiumframe.app",
     scanPrompt: "Scannez pour plus d'infos"
   },
   community: {

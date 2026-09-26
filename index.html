@@ -43,11 +43,11 @@
     </a>
 
     <ul class="nav-links">
-      <li><a href="#features" class="nav-link" data-i18n="nav.features">Características</a></li>
-      <li><a href="#story" class="nav-link" data-i18n="nav.story">Nuestra Visión</a></li>
-      <li><a href="#comparison" class="nav-link" data-i18n="nav.comparison">Comparativa</a></li>
-      <li><a href="#pricing" class="nav-link" data-i18n="nav.pricing">Precios</a></li>
-      <li><a href="#community" class="nav-link" data-i18n="nav.community">Comunidad</a></li>
+      <li><a href="#features" class="nav-link nav-item" data-i18n="nav.features">Características</a></li>
+      <li><a href="#story" class="nav-link nav-item" data-i18n="nav.story">Nuestra Visión</a></li>
+      <li><a href="#comparison" class="nav-link nav-item" data-i18n="nav.comparison">Comparativa</a></li>
+      <li><a href="#pricing" class="nav-link nav-item" data-i18n="nav.pricing">Precios</a></li>
+      <li><a href="#community" class="nav-link nav-item" data-i18n="nav.community">Comunidad</a></li>
     </ul>
 
     <div class="nav-actions">
@@ -132,25 +132,28 @@
   <main class="container">
     <!-- Hero Section -->
     <section class="hero">
-      <div class="announcement-badge" data-i18n="hero.badge">
-        leptium FenixFrame 2.0 • Diseñado para iPad, Android y Pantallas 24/7
+      <div class="hero-identity">
+        <h1 class="hero-brand-title" data-i18n="hero.brandTitle">leptium FenixFrame 2.0</h1>
+        <div class="announcement-badge hero-compat-pill" data-i18n="hero.badge">
+          Diseñado para iPad, Android y Pantallas 24/7
+        </div>
       </div>
       
       <div class="hero-logo-container">
         <img src="/logo.svg" alt="leptium FenixFrame Master Icon" class="hero-logo-img" width="144" height="144">
       </div>
 
-      <h1 class="hero-title">
-        <span data-i18n="hero.title">El marco de fotos digital</span> <br>
+      <h2 class="hero-title">
+        <span data-i18n="hero.title">El marco de fotos digital</span>
         <span class="text-gradient" data-i18n="hero.titleHighlight">más elegante jamás creado.</span>
-      </h1>
+      </h2>
 
       <p class="hero-subtitle" data-i18n="hero.subtitle">
         Tus mejores recuerdos no deberían quedar atrapados en un disco duro o perdidos en la nube. Transforma cualquier iPad o tablet en una pieza de exhibición artística 24/7 con diseño Glassmorphism, clima dinámico y protección anti-quemado OLED.
       </p>
 
       <div class="hero-ctas">
-        <a href="#pricing" class="btn btn-primary btn-large" data-i18n="hero.ctaBuy">Obtener Licencia Pro • $9.99</a>
+        <a href="#pricing" class="btn btn-primary btn-large" data-i18n="hero.ctaBuy">Obtener Licencia Basic • $29</a>
         <a href="/app/" class="btn btn-secondary btn-large" data-i18n="hero.ctaOpen">Probar Gratis en Navegador</a>
       </div>
 
@@ -381,7 +384,7 @@
             <tr>
               <td><strong data-i18n="comparison.initialCost">Costo Inicial</strong></td>
               <td class="comparison-negative" data-i18n="comparison.initialCostCompetitor">$130 - $190 USD (hardware nuevo obligatorio)</td>
-              <td class="comparison-highlight" data-i18n="comparison.initialCostOur">$0 - $9.99 USD (reutilizas tu tablet)</td>
+              <td class="comparison-highlight" data-i18n="comparison.initialCostOur">$0 - $29 USD (reutilizas tu tablet)</td>
             </tr>
             <tr>
               <td><strong data-i18n="comparison.subscription">Suscripción Anual</strong></td>
@@ -444,7 +447,7 @@
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span data-i18n="pricing.free.f3">Modo Local: hasta 200 fotos en memoria</span>
+                <span data-i18n="pricing.free.f3">Modo Local Air-Gapped: hasta 200 fotos</span>
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -452,7 +455,7 @@
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span data-i18n="pricing.free.f4">Recomendaciones de productos con Código QR</span>
+                <span data-i18n="pricing.free.f4">Recomendaciones QR no invasivas</span>
               </li>
             </ul>
           </div>
@@ -460,14 +463,14 @@
           <a href="/app/" class="btn btn-secondary" style="width:100%;" data-i18n="pricing.free.cta">Usar Versión Gratuita</a>
         </div>
 
-        <!-- Tier 2: Básico (Ad-Free) -->
+        <!-- Tier 2: Basic (Ad-Free) -->
         <div class="pricing-card">
           <div>
-            <h3 class="pricing-title" data-i18n="pricing.basic.title">Básico (Sin Anuncios)</h3>
+            <h3 class="pricing-title" data-i18n="pricing.basic.title">Basic (Ad-Free)</h3>
             <p class="pricing-desc" data-i18n="pricing.basic.desc">Tranquilidad total sin anuncios para tu hogar.</p>
 
             <div class="pricing-price-wrap">
-              <div class="pricing-price" data-i18n="pricing.basic.price">$4.99</div>
+              <div class="pricing-price" data-i18n="pricing.basic.price">$29</div>
               <div class="pricing-period" data-i18n="pricing.basic.period">USD / pago único</div>
             </div>
 
@@ -478,7 +481,7 @@
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span data-i18n="pricing.basic.f2">Modo Local: hasta 1,000 fotografías guardadas</span>
+                <span data-i18n="pricing.basic.f2">Fotos ilimitadas locales (Air-Gapped)</span>
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -499,7 +502,7 @@
             </ul>
           </div>
 
-          <a href="https://leptiumframe.lemonsqueezy.com/buy/basic?embed=1" class="btn btn-secondary lemonsqueezy-button" id="buyBtnBasic" style="width:100%;" target="_blank" data-i18n="pricing.basic.cta">Comprar Básico</a>
+          <a href="https://leptiumframe.lemonsqueezy.com/buy/basic?embed=1" class="btn btn-secondary lemonsqueezy-button" id="buyBtnBasic" style="width:100%;" target="_blank" data-i18n="pricing.basic.cta">Obtener Licencia Basic</a>
         </div>
 
         <!-- Tier 3: Premium Pro (Destacado) -->
@@ -510,14 +513,14 @@
             <p class="pricing-desc" data-i18n="pricing.premium.desc">La experiencia completa definitiva para toda la familia.</p>
 
             <div class="pricing-price-wrap">
-              <div class="pricing-price" data-i18n="pricing.premium.price">$9.99</div>
+              <div class="pricing-price" data-i18n="pricing.premium.price">$59</div>
               <div class="pricing-period" data-i18n="pricing.premium.period">USD / pago único</div>
             </div>
 
             <ul class="pricing-features">
               <li class="pricing-feature-item pricing-feature-highlight">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent-gold);"><polyline points="20 6 9 17 4 12"/></svg>
-                <span data-i18n="pricing.premium.fCloud">Conexión a Nube Personal (Google Photos, iCloud, WebDAV)</span>
+                <span data-i18n="pricing.premium.fCloud">Sincronización WebDAV, NAS y Nube Personal (iCloud, Google Photos)</span>
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -525,7 +528,7 @@
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span data-i18n="pricing.premium.f2">Escudo Anti-Quemado (Pixel-Shifting 24/7)</span>
+                <span data-i18n="pricing.premium.f2">Escudo Anti-Burn-in (Pixel-Shifting 24/7)</span>
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -553,7 +556,7 @@
             <p class="pricing-desc" data-i18n="pricing.maker.desc">Acceso total al código fuente para desarrolladores y DIY.</p>
 
             <div class="pricing-price-wrap">
-              <div class="pricing-price" data-i18n="pricing.maker.price">$39.00</div>
+              <div class="pricing-price" data-i18n="pricing.maker.price">$129</div>
               <div class="pricing-period" data-i18n="pricing.maker.period">USD / pago único</div>
             </div>
 
@@ -568,7 +571,7 @@
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span data-i18n="pricing.maker.f2">Derecho a self-hosting y modificaciones</span>
+                <span data-i18n="pricing.maker.f2">Derechos de autoalojamiento y modificación</span>
               </li>
               <li class="pricing-feature-item">
                 <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
