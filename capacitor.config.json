@@ -1,0 +1,21 @@
+{
+  "appId": "app.leptiumframe.frame",
+  "appName": "leptiumFrame",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 1200,
+      "backgroundColor": "#000000"
+    }
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true
+  }
+}

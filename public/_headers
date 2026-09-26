@@ -1,0 +1,25 @@
+/*
+  # Prevención estricta de Clickjacking
+  X-Frame-Options: SAMEORIGIN
+  
+  # Prevención de sniffing de tipo MIME
+  X-Content-Type-Options: nosniff
+  
+  # Aislamiento de origen para navegación segura
+  Referrer-Policy: strict-origin-when-cross-origin
+  
+  # Control estricto de APIs del navegador (Permite solo Wake Lock para el canvas)
+  Permissions-Policy: screen-wake-lock=(self), share=(self), camera=(), microphone=(), geolocation=()
+  
+  # Content Security Policy (CSP) hermética para modelo Zero-Framework y Zero-CDN
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https://api.lemonsqueezy.com; frame-src https://*.lemonsqueezy.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';
+
+# Service Worker nunca debe cachearse en el CDN
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Revalidación para HTML
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/app/*
+  Cache-Control: public, max-age=0, must-revalidate

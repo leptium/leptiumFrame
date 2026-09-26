@@ -1,0 +1,24 @@
+{
+  "name": "FenixFrame Digital Canvas OS",
+  "short_name": "FenixFoto",
+  "description": "Lienzo de visualizacion fotografica privada y soberana para pantallas dedicadas 24/7",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020408",
+  "theme_color": "#020408",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

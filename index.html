@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>leptium FenixFrame — El marco de fotos digital inteligente para iPad y pantallas 24/7</title>
+  <meta name="description" content="Convierte tu iPad o tablet en un marco digital interactivo de lujo. Glassmorphism estilo iOS, reloj, clima dinámico, collages 2x2 y protección anti-quemado OLED.">
+  <meta name="theme-color" content="#020408">
+  
+  <!-- OpenGraph / Facebook / WhatsApp / Telegram -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="leptium FenixFrame">
+  <meta property="og:title" content="leptium FenixFrame — El marco de fotos digital inteligente para iPad y pantallas 24/7">
+  <meta property="og:description" content="Convierte tu tablet o iPad en un marco digital interactivo de lujo. Glassmorphism estilo iOS, collages 2x2, sincronización local y nube, y protección anti-quemado OLED.">
+  <meta property="og:image" content="/og-image.svg">
+  <meta property="og:image:type" content="image/svg+xml">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="leptium FenixFrame — El marco de fotos digital inteligente">
+  <meta name="twitter:description" content="Convierte tu iPad o tablet en un marco digital interactivo de lujo. Glassmorphism estilo iOS, collages 2x2 y protección OLED.">
+  <meta name="twitter:image" content="/og-image.svg">
+
+  <link rel="icon" type="image/svg+xml" href="/logo.svg">
+  <link rel="alternate icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/logo.svg">
+  <link rel="stylesheet" href="/src/ui/styles/landing.css">
+  <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
+</head>
+<body>
+
+  <!-- Resplandores ambientales estilo Raycast -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
+  <!-- Barra de navegación flotante -->
+  <nav class="navbar">
+    <a href="#" class="nav-brand">
+      <img src="/logo.svg" alt="leptium FenixFrame Logo" class="nav-logo-icon" width="28" height="28" style="border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,0.35);">
+      <span>leptium FenixFrame</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#features" class="nav-link" data-i18n="nav.features">Características</a></li>
+      <li><a href="#story" class="nav-link" data-i18n="nav.story">Nuestra Visión</a></li>
+      <li><a href="#comparison" class="nav-link" data-i18n="nav.comparison">Comparativa</a></li>
+      <li><a href="#pricing" class="nav-link" data-i18n="nav.pricing">Precios</a></li>
+      <li><a href="#community" class="nav-link" data-i18n="nav.community">Comunidad</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <!-- Selector de Idioma Minimalista Apple Pill -->
+      <div class="lang-selector">
+        <button class="lang-btn active" data-lang="es" onclick="window.setAppLanguage('es')">ES</button>
+        <span class="lang-divider">/</span>
+        <button class="lang-btn" data-lang="en" onclick="window.setAppLanguage('en')">EN</button>
+        <span class="lang-divider">/</span>
+        <button class="lang-btn" data-lang="fr" onclick="window.setAppLanguage('fr')">FR</button>
+      </div>
+
+      <a href="./app" class="btn btn-secondary" data-i18n="nav.openApp">Abrir Marco</a>
+      <a href="#pricing" class="btn btn-primary" data-i18n="nav.buyLicense">Comprar Licencia</a>
+
+      <!-- Botón Hamburguesa Apple-Style -->
+      <button id="hamburgerBtn" class="hamburger-btn" aria-label="Abrir menú" onclick="window.toggleMobileNav()">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Overlay y Drawer de Navegación Móvil -->
+  <div id="mobileNavOverlay" class="mobile-nav-overlay" onclick="window.closeMobileNav()"></div>
+  <aside id="mobileNavDrawer" class="mobile-nav-drawer" aria-label="Navegación Móvil">
+    <div class="mobile-nav-drawer-header">
+      <a href="#" class="nav-brand" onclick="window.closeMobileNav()">
+        <img src="/logo.svg" alt="leptium FenixFrame Logo" class="nav-logo-icon" width="28" height="28" style="border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,0.35);">
+        <span>leptium FenixFrame</span>
+      </a>
+      <button class="hamburger-btn is-active" aria-label="Cerrar menú" onclick="window.closeMobileNav()" style="display:flex;width:34px;height:34px;">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+
+    <ul class="mobile-nav-list">
+      <li><a href="#" class="mobile-nav-link" onclick="window.closeMobileNav()"><svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span data-i18n="nav.home">Inicio</span></a></li>
+      <li><a href="#story" class="mobile-nav-link" onclick="window.closeMobileNav()"><svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span data-i18n="nav.story">Nuestra Visión</span></a></li>
+      <li><a href="#features" class="mobile-nav-link" onclick="window.closeMobileNav()"><svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg><span data-i18n="nav.features">Características</span></a></li>
+      <li><a href="#comparison" class="mobile-nav-link" onclick="window.closeMobileNav()"><svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg><span data-i18n="nav.comparison">Comparativa</span></a></li>
+      <li><a href="#pricing" class="mobile-nav-link" onclick="window.closeMobileNav()"><svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><span data-i18n="nav.pricing">Precios</span></a></li>
+      <li><a href="#community" class="mobile-nav-link" onclick="window.closeMobileNav()"><svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span data-i18n="nav.community">Comunidad</span></a></li>
+    </ul>
+
+    <div class="mobile-nav-actions">
+      <a href="./app" class="btn btn-secondary" onclick="window.closeMobileNav()" data-i18n="nav.openApp">Abrir Marco</a>
+      <a href="#pricing" class="btn btn-primary" onclick="window.closeMobileNav()" data-i18n="nav.buyLicense">Comprar Licencia</a>
+    </div>
+
+    <div class="mobile-nav-footer">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:0.85em;color:var(--text-muted);">Idioma:</span>
+        <div class="lang-selector">
+          <button class="lang-btn active" data-lang="es" onclick="window.setAppLanguage('es')">ES</button>
+          <span class="lang-divider">/</span>
+          <button class="lang-btn" data-lang="en" onclick="window.setAppLanguage('en')">EN</button>
+          <span class="lang-divider">/</span>
+          <button class="lang-btn" data-lang="fr" onclick="window.setAppLanguage('fr')">FR</button>
+        </div>
+      </div>
+      <div class="social-links-row" style="justify-content:center;gap:8px;">
+        <a href="https://x.com/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="X (Twitter)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://instagram.com/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://github.com/leptium/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="GitHub">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+        <a href="https://reddit.com/r/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn" title="Reddit">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.703zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="announcement-badge" data-i18n="hero.badge">
+        leptium FenixFrame 2.0 • Diseñado para iPad, Android y Pantallas 24/7
+      </div>
+      
+      <div class="hero-logo-container">
+        <img src="/logo.svg" alt="leptium FenixFrame Master Icon" class="hero-logo-img" width="144" height="144">
+      </div>
+
+      <h1 class="hero-title">
+        <span data-i18n="hero.title">El marco de fotos digital</span> <br>
+        <span class="text-gradient" data-i18n="hero.titleHighlight">más elegante jamás creado.</span>
+      </h1>
+
+      <p class="hero-subtitle" data-i18n="hero.subtitle">
+        Tus mejores recuerdos no deberían quedar atrapados en un disco duro o perdidos en la nube. Transforma cualquier iPad o tablet en una pieza de exhibición artística 24/7 con diseño Glassmorphism, clima dinámico y protección anti-quemado OLED.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="#pricing" class="btn btn-primary btn-large" data-i18n="hero.ctaBuy">Obtener Licencia Pro • $9.99</a>
+        <a href="./app" class="btn btn-secondary btn-large" data-i18n="hero.ctaOpen">Probar Gratis en Navegador</a>
+      </div>
+
+      <!-- Previsualizador Interactivo en Dispositivo Mockup (iPad Frame) -->
+      <div class="showcase-wrapper">
+        <div class="device-frame">
+          <div class="device-badge-overlay">
+            <span class="pulse-dot"></span>
+            <span data-i18n="hero.demoBadge">Demo en Vivo • Haz clic en los lados para cambiar fotos o centro para pausar</span>
+          </div>
+
+          <div class="device-screen-container">
+            <iframe class="device-screen-iframe" src="./app?embed=1" title="leptium FenixFrame Live Demo" loading="eager" scrolling="no" frameborder="0" allow="fullscreen"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección de Narrativa Emocional & Arquitectura Híbrida Soberana -->
+    <section id="story" class="section">
+      <div class="section-header">
+        <div class="section-tag" data-i18n="story.tag">Tu Privacidad, Tus Reglas</div>
+        <h2 class="section-title" data-i18n="story.title">Arquitectura Híbrida: Máxima Privacidad Local o Tu Nube Personal.</h2>
+        <p class="section-desc" data-i18n="story.p2">leptium FenixFrame rompe ese paradigma con una Arquitectura Soberana: tú decides si prefieres aislamiento total sin internet o sincronización directa con tu propia nube. Cero servidores intermediarios que toquen tus archivos.</p>
+      </div>
+
+      <div class="hybrid-grid">
+        <!-- Card 1: Modo Local Air-Gapped -->
+        <div class="hybrid-card hybrid-card-local">
+          <div class="hybrid-header">
+            <span class="hybrid-badge badge-green" data-i18n="story.localCardBadge">100% Privado</span>
+            <div class="hybrid-icon-wrap icon-green">
+              <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+          </div>
+          <h3 class="hybrid-card-title" data-i18n="story.localCardTitle">Modo Local (Air-Gapped Offline)</h3>
+          <p class="hybrid-card-desc" data-i18n="story.localCardDesc">
+            Selecciona fotos de tu carrete o almacenamiento físico. Funciona 100% desconectado de la red. Cero bytes salen de tu dispositivo hacia internet.
+          </p>
+          <ul class="hybrid-checklist">
+            <li>
+              <svg class="sf-icon check-icon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span data-i18n="story.localCardPoint1">Sin conexión a internet requerida</span>
+            </li>
+            <li>
+              <svg class="sf-icon check-icon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span data-i18n="story.localCardPoint2">Tus fotos jamás tocan la red</span>
+            </li>
+            <li>
+              <svg class="sf-icon check-icon-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span data-i18n="story.localCardPoint3">Ideal para máxima discreción y seguridad</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 2: Modo Nube Personal Directa -->
+        <div class="hybrid-card hybrid-card-cloud">
+          <div class="hybrid-header">
+            <span class="hybrid-badge badge-blue" data-i18n="story.cloudCardBadge">Cero Intermediarios</span>
+            <div class="hybrid-icon-wrap icon-blue">
+              <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+              </svg>
+            </div>
+          </div>
+          <h3 class="hybrid-card-title" data-i18n="story.cloudCardTitle">Nube Personal Directa (Peer-to-Cloud)</h3>
+          <p class="hybrid-card-desc" data-i18n="story.cloudCardDesc">
+            Sincroniza álbumes de iCloud, Google Photos, OneDrive o WebDAV. La conexión viaja directamente y de forma cifrada entre tu dispositivo y tu propio proveedor.
+          </p>
+          <ul class="hybrid-checklist">
+            <li>
+              <svg class="sf-icon check-icon-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span data-i18n="story.cloudCardPoint1">leptium FenixFrame jamás almacena tus fotos</span>
+            </li>
+            <li>
+              <svg class="sf-icon check-icon-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span data-i18n="story.cloudCardPoint2">Sin suscripciones mensuales forzadas</span>
+            </li>
+            <li>
+              <svg class="sf-icon check-icon-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span data-i18n="story.cloudCardPoint3">Tokens cifrados solo en tu navegador</span>
+            </li>
+          </ul>
+
+          <div class="cloud-pills-wrap">
+            <div class="cloud-pills-title" data-i18n="story.cloudPillsTitle">Proveedores Compatibles Directos:</div>
+            <div class="cloud-pills-row">
+              <div class="cloud-pill">
+                <svg class="cloud-pill-icon" viewBox="0 0 24 24" fill="none" stroke="#32ade6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                </svg>
+                <span data-i18n="story.cloudIcloud">iCloud Photos</span>
+              </div>
+              <div class="cloud-pill">
+                <svg class="cloud-pill-icon" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                  <polyline points="2 17 12 22 22 17"></polyline>
+                  <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                <span data-i18n="story.cloudGoogle">Google Drive / Fotos</span>
+              </div>
+              <div class="cloud-pill">
+                <svg class="cloud-pill-icon" viewBox="0 0 24 24" fill="none" stroke="#0071e3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span data-i18n="story.cloudOnedrive">Microsoft OneDrive</span>
+              </div>
+              <div class="cloud-pill">
+                <svg class="cloud-pill-icon" viewBox="0 0 24 24" fill="none" stroke="#bf5af2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="16 16 12 12 8 16"></polyline>
+                  <line x1="12" y1="12" x2="12" y2="21"></line>
+                  <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+                </svg>
+                <span data-i18n="story.cloudWebdav">WebDAV / Nextcloud</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bento Grid Features (Estilo Linear) -->
+    <section id="features" class="section">
+      <div class="section-header">
+        <div class="section-tag" data-i18n="features.tag">Ingeniería & Diseño</div>
+        <h2 class="section-title" data-i18n="features.title">Construido para estar encendido las 24 horas del día.</h2>
+        <p class="section-desc" data-i18n="features.desc">Cada detalle visual y algoritmo de hardware fue diseñado para exhibir tus fotos familiares con la máxima fidelidad sin dañar tu pantalla.</p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Card 1 (Grande): Anti-Burn-in -->
+        <div class="bento-card col-span-2">
+          <div class="bento-icon">
+            <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="features.burninTitle">Escudo Anti-Quemado 24/7 (Pixel-Shifting)</h3>
+          <p class="bento-text" data-i18n="features.burninText">
+            Las pantallas OLED y Retina sufren retención de imagen si muestran texto fijo durante días. leptium FenixFrame integra un motor que desplaza imperceptiblemente (1-2px) los paneles estáticos de reloj y widgets cada 15 minutos, protegiendo paneles de por vida.
+          </p>
+        </div>
+
+        <!-- Card 2: Glassmorphism -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="#32ade6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="features.glassTitle">Estética Apple Glassmorphism</h3>
+          <p class="bento-text" data-i18n="features.glassText">
+            Texturas translúcidas de vidrio esmerilado, desenfoques en tiempo real y tipografía SF diseñada para complementar cualquier rincón de tu hogar u oficina.
+          </p>
+        </div>
+
+        <!-- Card 3: Collages 2x2 -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="features.collageTitle">Ensamblador de Collages 2x2</h3>
+          <p class="bento-text" data-i18n="features.collageText">
+            Toca un botón y genera composiciones artísticas cuadradas de 1600x1600 listas para guardar y compartir con resolución de imprenta.
+          </p>
+        </div>
+
+        <!-- Card 4: Privacidad Soberana -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="#bf5af2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="features.privacyTitle">Arquitectura Soberana & Segura</h3>
+          <p class="bento-text" data-i18n="features.privacyText">
+            Tus fotos familiares jamás se almacenan en servidores de leptium FenixFrame. Funcionamiento 100% local o conexión cifrada punto a punto con tu propio proveedor en la nube.
+          </p>
+        </div>
+
+        <!-- Card 5: Dispositivos Antiguos -->
+        <div class="bento-card">
+          <div class="bento-icon">
+            <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="none" stroke="#ff9f0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="features.retroTitle">Compatible con Tablets Antiguas</h3>
+          <p class="bento-text" data-i18n="features.retroText">
+            Optimizado en JavaScript puro de ultra-bajo consumo de memoria para devolver a la vida iPads y tablets con muchos años de antigüedad sin lentitud.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla Comparativa -->
+    <section id="comparison" class="section">
+      <div class="section-header">
+        <div class="section-tag" data-i18n="comparison.tag">Ahorro & Inteligencia</div>
+        <h2 class="section-title" data-i18n="comparison.title">¿Por qué leptium FenixFrame supera a los marcos tradicionales?</h2>
+      </div>
+
+      <div class="comparison-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th data-i18n="comparison.featureCol">Característica</th>
+              <th data-i18n="comparison.amazonCol">Marcos de Amazon / Skylight</th>
+              <th style="color:#fff;" data-i18n="comparison.ourCol">leptium FenixFrame</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong data-i18n="comparison.initialCost">Costo Inicial</strong></td>
+              <td class="comparison-negative" data-i18n="comparison.initialCostCompetitor">$130 - $190 USD (hardware nuevo obligatorio)</td>
+              <td class="comparison-highlight" data-i18n="comparison.initialCostOur">$0 - $9.99 USD (reutilizas tu tablet)</td>
+            </tr>
+            <tr>
+              <td><strong data-i18n="comparison.subscription">Suscripción Anual</strong></td>
+              <td class="comparison-negative" data-i18n="comparison.subscriptionCompetitor">$39 - $49 USD / año obligatorios</td>
+              <td class="comparison-highlight" data-i18n="comparison.subscriptionOur">$0 (Sin cuotas jamás)</td>
+            </tr>
+            <tr>
+              <td><strong data-i18n="comparison.screenQuality">Calidad de Pantalla</strong></td>
+              <td class="comparison-negative" data-i18n="comparison.screenCompetitor">Paneles TFT/TN de 720p o 1080p baratos</td>
+              <td class="comparison-highlight" data-i18n="comparison.screenOur">Retina / OLED / 4K de tu dispositivo</td>
+            </tr>
+            <tr>
+              <td><strong data-i18n="comparison.burninProtection">Protección Anti-Burn-in</strong></td>
+              <td class="comparison-negative" data-i18n="comparison.burninCompetitor">Inexistente (decoloración rápida)</td>
+              <td class="comparison-highlight" data-i18n="comparison.burninOur">Pixel-Shifting activo 24/7</td>
+            </tr>
+            <tr>
+              <td><strong data-i18n="comparison.privacy">Privacidad de Fotos</strong></td>
+              <td class="comparison-negative" data-i18n="comparison.privacyCompetitor">Almacenadas en la nube del fabricante + telemetría obligatoria</td>
+              <td class="comparison-highlight" data-i18n="comparison.privacyOur">100% Soberano: Local en tu dispositivo o conexión directa a tu nube personal</td>
+            </tr>
+            <tr>
+              <td><strong data-i18n="comparison.connectivity">Conectividad</strong></td>
+              <td class="comparison-negative" data-i18n="comparison.connectivityCompetitor">Encierro en ecosistema propietario con internet forzado</td>
+              <td class="comparison-highlight" data-i18n="comparison.connectivityOur">Híbrido: Funciona 100% offline o sincronizado con tus nubes favoritas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Pricing Section (4 Tiers) -->
+    <section id="pricing" class="section">
+      <div class="section-header">
+        <div class="section-tag" data-i18n="pricing.tag">Monetización Transparente</div>
+        <h2 class="section-title" data-i18n="pricing.title">Un modelo para cada necesidad. Sin sorpresas.</h2>
+        <p class="section-desc" data-i18n="pricing.desc">Desde una versión gratuita impulsada por recomendaciones de compra con código QR, hasta licencias comerciales y acceso al código fuente para entusiastas.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Tier 1: Free / Community -->
+        <div class="pricing-card">
+          <div>
+            <h3 class="pricing-title" data-i18n="pricing.free.title">Free / Comunidad</h3>
+            <p class="pricing-desc" data-i18n="pricing.free.desc">Perfecto para revivir una tablet vieja de inmediato.</p>
+
+            <div class="pricing-price-wrap">
+              <div class="pricing-price" data-i18n="pricing.free.price">$0</div>
+              <div class="pricing-period" data-i18n="pricing.free.period">Gratis para siempre</div>
+            </div>
+
+            <ul class="pricing-features">
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.free.f1">Marco de fotos digital funcional</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.free.f2">Reloj tipográfico y fecha</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.free.f3">Modo Local: hasta 200 fotos en memoria</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.free.fCloud">Sin conexión a la nube (solo local offline)</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.free.f4">Recomendaciones de productos con Código QR</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="./app" class="btn btn-secondary" style="width:100%;" data-i18n="pricing.free.cta">Usar Versión Gratuita</a>
+        </div>
+
+        <!-- Tier 2: Básico (Ad-Free) -->
+        <div class="pricing-card">
+          <div>
+            <h3 class="pricing-title" data-i18n="pricing.basic.title">Básico (Sin Anuncios)</h3>
+            <p class="pricing-desc" data-i18n="pricing.basic.desc">Tranquilidad total sin anuncios para tu hogar.</p>
+
+            <div class="pricing-price-wrap">
+              <div class="pricing-price" data-i18n="pricing.basic.price">$4.99</div>
+              <div class="pricing-period" data-i18n="pricing.basic.period">USD / pago único</div>
+            </div>
+
+            <ul class="pricing-features">
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.basic.f1">Cero publicidad ni códigos QR</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.basic.f2">Modo Local: hasta 1,000 fotografías guardadas</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.basic.fCloud">Sin conexión a la nube (solo local offline)</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.basic.f3">Widget de clima dinámico</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.basic.f4">Atenuación nocturna automática</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.basic.f5">1 dispositivo por licencia</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://leptiumframe.lemonsqueezy.com/buy/basic?embed=1" class="btn btn-secondary lemonsqueezy-button" id="buyBtnBasic" style="width:100%;" target="_blank" data-i18n="pricing.basic.cta">Comprar Básico</a>
+        </div>
+
+        <!-- Tier 3: Premium Pro (Destacado) -->
+        <div class="pricing-card pricing-popular">
+          <div class="pricing-badge" data-i18n="pricing.badgePopular">Más Elegido</div>
+          <div>
+            <h3 class="pricing-title" style="color:var(--accent-gold);" data-i18n="pricing.premium.title">Premium Pro</h3>
+            <p class="pricing-desc" data-i18n="pricing.premium.desc">La experiencia completa definitiva para toda la familia.</p>
+
+            <div class="pricing-price-wrap">
+              <div class="pricing-price" data-i18n="pricing.premium.price">$9.99</div>
+              <div class="pricing-period" data-i18n="pricing.premium.period">USD / pago único</div>
+            </div>
+
+            <ul class="pricing-features">
+              <li class="pricing-feature-item pricing-feature-highlight">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--accent-gold);"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.premium.fCloud">Conexión a Nube Personal (Google Photos, iCloud, WebDAV)</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.premium.f1">Cero publicidad y fotos ilimitadas (Local + Nube)</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.premium.f2">Escudo Anti-Quemado (Pixel-Shifting 24/7)</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.premium.f3">Ensamblador de Collages 2x2 en 4K ilimitado</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.premium.f4">Licencia para hasta 5 dispositivos a la vez</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.premium.f5">Actualizaciones gratuitas de por vida</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://leptiumframe.lemonsqueezy.com/buy/pro?embed=1" class="btn btn-primary lemonsqueezy-button" id="buyBtnPro" style="width:100%;font-weight:600;" target="_blank" data-i18n="pricing.premium.cta">Comprar Licencia Pro</a>
+        </div>
+
+        <!-- Tier 4: Maker / Source Code -->
+        <div class="pricing-card pricing-maker">
+          <div class="pricing-badge badge-maker" data-i18n="pricing.badgeMaker">Para Creadores</div>
+          <div>
+            <h3 class="pricing-title" style="color:#e0aaff;" data-i18n="pricing.maker.title">Maker / Source License</h3>
+            <p class="pricing-desc" data-i18n="pricing.maker.desc">Acceso total al código fuente para desarrolladores y DIY.</p>
+
+            <div class="pricing-price-wrap">
+              <div class="pricing-price" data-i18n="pricing.maker.price">$39.00</div>
+              <div class="pricing-period" data-i18n="pricing.maker.period">USD / pago único</div>
+            </div>
+
+            <ul class="pricing-features">
+              <li class="pricing-feature-item pricing-feature-highlight" style="color:#e0aaff; border-color:rgba(224,170,255,0.3); background:rgba(224,170,255,0.08); box-shadow:0 0 12px rgba(224,170,255,0.1);">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#e0aaff;"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.maker.fCloud">Incluye Nube Personal y Licencia Pro</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.maker.f1">Código fuente completo en Vanilla JS</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.maker.f2">Derecho a self-hosting y modificaciones</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.maker.f3">Ideal para Raspberry Pi, pantallas de autos y domótica</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.maker.f4">Soporte para integrar tus propios widgets</span>
+              </li>
+              <li class="pricing-feature-item">
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span data-i18n="pricing.maker.f5">Licencia comercial para proyectos a medida</span>
+              </li>
+            </ul>
+          </div>
+
+          <a href="https://leptiumframe.lemonsqueezy.com/buy/maker?embed=1" class="btn btn-secondary lemonsqueezy-button" id="buyBtnMaker" style="width:100%;" target="_blank" data-i18n="pricing.maker.cta">Obtener Código Fuente</a>
+        </div>
+      </div>
+
+      <p style="font-size: 0.88em; color: var(--text-muted); margin-top: 28px; text-align: center;" data-i18n="pricing.guarantee">
+        Garantía de reembolso de 14 días si no estás 100% satisfecho.
+      </p>
+
+      <!-- Banner de Activación Fácil en 3 Pasos -->
+      <div class="glass-card" style="margin-top: 36px; padding: 28px 32px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); max-width: 860px; margin-left: auto; margin-right: auto; text-align: left;">
+        <h4 style="margin: 0 0 16px 0; font-size: 1.15em; font-weight: 700; color: #ffd60a; display: flex; align-items: center; gap: 8px;">
+          <svg class="sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span data-i18n="pricing.howItWorks">Activación instantánea en 3 pasos:</span>
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 0.9em; color: rgba(255,255,255,0.8); line-height: 1.5;">
+          <div style="background: rgba(255,255,255,0.04); padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <strong style="color: #fff; display: block; margin-bottom: 4px;" data-i18n="pricing.step1">1. Elige tu plan y paga seguro con Apple Pay, Google Pay o tarjeta.</strong>
+          </div>
+          <div style="background: rgba(255,255,255,0.04); padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <strong style="color: #fff; display: block; margin-bottom: 4px;" data-i18n="pricing.step2">2. Recibe tu clave de licencia al instante en pantalla y por correo electrónico.</strong>
+          </div>
+          <div style="background: rgba(255,255,255,0.04); padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+            <strong style="color: #fff; display: block; margin-bottom: 4px;" data-i18n="pricing.step3">3. Abre tu marco digital, ve a Ajustes > Licencia y actívala en segundos.</strong>
+          </div>
+        </div>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <span style="font-size: 0.88em; color: rgba(255,255,255,0.6);" data-i18n="pricing.alreadyHaveKey">¿Ya compraste tu licencia?</span>
+          <a href="./app" class="btn btn-secondary" style="font-size: 0.88em; padding: 8px 18px;" data-i18n="pricing.activateNow">Abrir Marco y Activar Clave</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección de Experiencia de Comunidad & Filosofía de Hardware -->
+    <section class="community-section" id="community">
+      <div class="announcement-badge" data-i18n="community.badge">
+        EXPERIENCIA DE COMUNIDAD &amp; SOSTENIBILIDAD
+      </div>
+
+      <h2 class="section-title">
+        <span data-i18n="community.title">Segunda vida a tus tablets.</span> <br>
+        <span class="gradient-text" data-i18n="community.titleHighlight">Cero basura electrónica.</span>
+      </h2>
+      <p class="section-subtitle" data-i18n="community.subtitle">
+        No necesitas gastar $150 en marcos nuevos de plástico desechable. Rescata ese iPad o tablet Android que tienes guardada en un cajón y dale una segunda vida con diseño de galería, sincronización privada y cero basura electrónica.
+      </p>
+
+      <!-- Banner Hero de Filosofía Upcycling (100% de Ancho) -->
+      <div class="philosophy-upcycling-hero">
+        <div>
+          <div class="philosophy-icon-wrap">
+            <svg class="sf-icon" style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="3" ry="3"></rect>
+              <circle cx="12" cy="18" r="1"></circle>
+              <path d="M9 8h6"></path>
+              <path d="M9 12h6"></path>
+            </svg>
+          </div>
+          <span class="philosophy-badge badge-green" data-i18n="community.philosophyUpcyclingBadge">100% Sostenible &amp; Ahorro Real</span>
+          <h3 class="philosophy-title" data-i18n="community.philosophyUpcyclingTitle">Filosofía Upcycling: Dale superpoderes a lo que ya tienes</h3>
+          <p class="philosophy-desc" data-i18n="community.philosophyUpcyclingDesc">
+            El mejor dispositivo es el que ya tienes en casa. Millones de iPads antiguos y tablets Android están guardados en cajones porque ya no pueden instalar apps pesadas. leptium FenixFrame corre de forma ultraligera en el navegador web a 60 FPS, transformando tecnología olvidada en un marco de fotos inteligente 24/7 sin gastar un centavo en nuevo hardware.
+          </p>
+
+          <ul class="upcycling-points-list">
+            <li class="upcycling-point-item">
+              <div class="upcycling-point-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <span data-i18n="community.philosophyUpcyclingPoint1">Ahorra $150+ evitando comprar marcos comerciales desechables</span>
+            </li>
+            <li class="upcycling-point-item">
+              <div class="upcycling-point-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <span data-i18n="community.philosophyUpcyclingPoint2">Reduce la huella de carbono y el impacto de la chatarra tecnológica</span>
+            </li>
+            <li class="upcycling-point-item">
+              <div class="upcycling-point-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <span data-i18n="community.philosophyUpcyclingPoint3">Optimizado para bajo consumo y pantallas Retina de iPads antiguos</span>
+            </li>
+          </ul>
+
+          <a href="./app" class="btn btn-primary" style="font-size:0.95em;padding:12px 24px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;" data-i18n="nav.openApp">Probar en mi Tablet Gratis</a>
+        </div>
+
+        <div class="upcycling-sidebar-card">
+          <div style="font-size:0.85em;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Impacto Sostenible Estimado</div>
+          
+          <div class="upcycling-metric-row">
+            <span class="upcycling-metric-label">Ahorro en Hardware</span>
+            <span class="upcycling-metric-val">100% ($0 gastado)</span>
+          </div>
+          <div class="upcycling-metric-row">
+            <span class="upcycling-metric-label">Basura Electrónica (E-Waste)</span>
+            <span class="upcycling-metric-val">0 gramos</span>
+          </div>
+          <div class="upcycling-metric-row">
+            <span class="upcycling-metric-label">Compatibilidad</span>
+            <span class="upcycling-metric-val">Cualquier navegador</span>
+          </div>
+          <div class="upcycling-metric-row">
+            <span class="upcycling-metric-label">Vida Útil Extendida</span>
+            <span class="upcycling-metric-val">+5 a 10 años</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Muro de Experiencias de Comunidad -->
+      <div style="margin-top: 60px;">
+        <h3 style="font-size: 1.6em; font-weight: 700; margin-bottom: 8px;" data-i18n="community.reviewsTitle">Experiencias reales de la comunidad</h3>
+        <p style="color: var(--text-secondary); font-size: 0.95em; margin-bottom: 24px;" data-i18n="community.reviewsSubtitle">
+          Descubre cómo personas de todo el mundo están reviviendo sus dispositivos y transformando sus hogares.
+        </p>
+
+        <!-- Aviso Transparente de Fase Beta / Demostración -->
+        <div class="beta-notice-banner">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="beta-tag-pill" data-i18n="community.betaTag">Demostración Beta</span>
+            <span data-i18n="community.betaNotice">Casos de demostración (Fase Beta) • Sé pionero y comparte tu tablet revivida abajo</span>
+          </div>
+          <button class="btn btn-secondary" onclick="window.openCommunityModal()" style="font-size:0.82em;padding:6px 14px;cursor:pointer;" data-i18n="community.shareStoryBtn">Compartir mi Experiencia</button>
+        </div>
+
+        <div id="experiencesGrid" class="experiences-grid">
+          <!-- Reseña Demo 1 -->
+          <div class="experience-card">
+            <div>
+              <div class="experience-header">
+                <div class="experience-author-wrap">
+                  <div class="experience-avatar">MA</div>
+                  <div>
+                    <div class="experience-author-name">Marco Álvarez</div>
+                    <div class="experience-author-loc">Madrid, España • <span class="beta-tag-pill" style="font-size:0.65em;padding:2px 6px;" data-i18n="community.betaTag">Demostración Beta</span></div>
+                  </div>
+                </div>
+                <div class="experience-device-pill">
+                  <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
+                  <span>iPad Air 2 (2014) • 10 años</span>
+                </div>
+              </div>
+              <div class="experience-stars" aria-label="5 de 5 estrellas">
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <p class="experience-quote">
+                "Tenía mi viejo iPad en un cajón acumulando polvo porque ya ninguna app moderna abría. Instalé leptium FenixFrame como PWA a pantalla completa en un atril de madera en el salón y parece un marco de galería de $300. Mi familia pasa horas viendo fotos olvidadas."
+              </p>
+            </div>
+          </div>
+
+          <!-- Reseña Demo 2 -->
+          <div class="experience-card">
+            <div>
+              <div class="experience-header">
+                <div class="experience-author-wrap">
+                  <div class="experience-avatar">SL</div>
+                  <div>
+                    <div class="experience-author-name">Sophie Laurent</div>
+                    <div class="experience-author-loc">Lyon, Francia • <span class="beta-tag-pill" style="font-size:0.65em;padding:2px 6px;" data-i18n="community.betaTag">Demostración Beta</span></div>
+                  </div>
+                </div>
+                <div class="experience-device-pill">
+                  <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
+                  <span>Galaxy Tab A8 • Android 11</span>
+                </div>
+              </div>
+              <div class="experience-stars" aria-label="5 de 5 estrellas">
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <p class="experience-quote">
+                "Se lo regalé a mis abuelos. Conecté su álbum familiar compartido y ahora todos los nietos agregamos fotos y les aparecen al instante en su comedor. La atenuación nocturna automática es perfecta, se apaga sola a las 10 PM sin que toquen nada."
+              </p>
+            </div>
+          </div>
+
+          <!-- Reseña Demo 3 -->
+          <div class="experience-card">
+            <div>
+              <div class="experience-header">
+                <div class="experience-author-wrap">
+                  <div class="experience-avatar">CR</div>
+                  <div>
+                    <div class="experience-author-name">Carlos Ramírez</div>
+                    <div class="experience-author-loc">Medellín, Colombia • <span class="beta-tag-pill" style="font-size:0.65em;padding:2px 6px;" data-i18n="community.betaTag">Demostración Beta</span></div>
+                  </div>
+                </div>
+                <div class="experience-device-pill">
+                  <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
+                  <span>iPad Mini 4 • Pantalla Retina</span>
+                </div>
+              </div>
+              <div class="experience-stars" aria-label="5 de 5 estrellas">
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <p class="experience-quote">
+                "Cero suscripciones abusivas de $40 al año como en Skylight ni cámaras espías como en Amazon. La privacidad local y la compra única de $9.99 me convencieron de inmediato. Los collages 2x2 para imprimir son una locura de calidad."
+              </p>
+            </div>
+          </div>
+
+          <!-- Reseña Demo 4 -->
+          <div class="experience-card">
+            <div>
+              <div class="experience-header">
+                <div class="experience-author-wrap">
+                  <div class="experience-avatar">DK</div>
+                  <div>
+                    <div class="experience-author-name">David Kim</div>
+                    <div class="experience-author-loc">Austin, EE. UU. • <span class="beta-tag-pill" style="font-size:0.65em;padding:2px 6px;" data-i18n="community.betaTag">Demostración Beta</span></div>
+                  </div>
+                </div>
+                <div class="experience-device-pill">
+                  <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
+                  <span>iPad Pro 10.5" • True Tone</span>
+                </div>
+              </div>
+              <div class="experience-stars" aria-label="5 de 5 estrellas">
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </div>
+              <p class="experience-quote">
+                "El pixel-shifting anti-quemado me dio total tranquilidad para dejar la pantalla encendida 24/7 en mi despacho. El reloj tipográfico y el clima dinámico hacen que sea el centro de conversación de cada cliente que entra."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner para Compartir Historia -->
+        <div class="community-cta-card">
+          <div>
+            <h4 style="font-size: 1.25em; font-weight: 700; color: #fff; margin-bottom: 6px;" data-i18n="community.shareStoryTitle">¿Tienes un marco en marcha?</h4>
+            <p style="color: var(--text-secondary); font-size: 0.92em; margin: 0;" data-i18n="community.shareStoryDesc">
+              Cuéntale a la comunidad qué tablet reviviste, en qué rincón de tu hogar la tienes y cómo ha sido tu experiencia.
+            </p>
+          </div>
+          <button class="btn btn-primary" onclick="window.openCommunityModal()" style="white-space: nowrap;" data-i18n="community.shareStoryBtn">Compartir mi Experiencia</button>
+        </div>
+
+        <!-- Tarjeta de Convergencia en Redes Sociales (#leptiumFenixFrame) -->
+        <div class="social-convergence-card">
+          <div>
+            <h4 style="font-size: 1.15em; font-weight: 700; color: #fff; margin-bottom: 4px;" data-i18n="community.socialTitle">Comunidad &amp; Convergencia Digital</h4>
+            <p style="color: var(--text-secondary); font-size: 0.9em; margin: 0;">
+              <span data-i18n="community.socialPrompt">Síguenos y comparte fotos de tu marco en redes con la etiqueta</span>
+              <span class="social-tag-badge">#leptiumFenixFrame</span>
+            </p>
+          </div>
+          <div class="social-links-row">
+            <a href="https://x.com/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              <span>X (Twitter)</span>
+            </a>
+            <a href="https://instagram.com/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              <span>Instagram</span>
+            </a>
+            <a href="https://github.com/leptium/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              <span>GitHub</span>
+            </a>
+            <a href="https://reddit.com/r/leptiumFrame" target="_blank" rel="noopener noreferrer" class="social-icon-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.703zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+              <span>Reddit</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal: Compartir Experiencia de la Comunidad -->
+    <div id="communityModal" class="landing-modal-overlay" onclick="if(event.target===this) window.closeCommunityModal()">
+      <div class="landing-modal-card">
+        <h3 style="font-size:1.3em;font-weight:700;color:#fff;margin-bottom:6px;" data-i18n="community.modalTitle">Comparte tu Historia con la Comunidad</h3>
+        <p style="font-size:0.85em;color:var(--text-secondary);margin-bottom:20px;" data-i18n="community.modalSubtitle">Tu experiencia ayuda a otros a rescatar sus dispositivos y evitar la basura electrónica.</p>
+
+        <form id="communityForm" onsubmit="window.submitCommunityStory(event)">
+          <div class="landing-input-group">
+            <label class="landing-input-label" data-i18n="community.modalName">Tu Nombre o Alias:</label>
+            <input type="text" id="commNameInput" required placeholder="Ej: Carlos M." class="landing-input">
+          </div>
+
+          <div class="landing-input-group">
+            <label class="landing-input-label" data-i18n="community.modalCity">Ciudad / País:</label>
+            <input type="text" id="commCityInput" placeholder="Ej: Madrid, España" class="landing-input">
+          </div>
+
+          <div class="landing-input-group">
+            <label class="landing-input-label" data-i18n="community.modalDevice">Modelo de Tablet o Pantalla:</label>
+            <input type="text" id="commDeviceInput" required placeholder="Ej: iPad Air 2 (2014), Samsung Tab A8..." data-i18n-attr="placeholder:community.modalDevicePlaceholder" class="landing-input">
+          </div>
+
+          <div class="landing-input-group">
+            <label class="landing-input-label" data-i18n="community.modalStory">Tu Historia o Reseña:</label>
+            <textarea id="commStoryInput" required rows="3" placeholder="Cuéntanos qué hiciste con tu tablet, dónde la pusiste y cómo ha reaccionado tu familia..." data-i18n-attr="placeholder:community.modalStoryPlaceholder" class="landing-input landing-textarea"></textarea>
+          </div>
+
+          <!-- Subida de Foto de la Tablet Revivida -->
+          <div class="landing-input-group">
+            <label class="landing-input-label" data-i18n="community.modalPhotoLabel">Foto de tu tablet (opcional):</label>
+            <div class="comm-photo-dropzone" onclick="document.getElementById('commPhotoInput').click()">
+              <input type="file" id="commPhotoInput" accept="image/*" style="display:none;" onchange="window.handleCommunityPhotoUpload(this)">
+              <svg class="sf-icon" style="width:24px;height:24px;color:#ffd60a;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span style="font-size:0.85em;color:rgba(255,255,255,0.75);" data-i18n="community.modalPhotoPrompt">Arrastra o toca para subir una foto de tu marco</span>
+            </div>
+            <div id="commPhotoPreviewWrap" class="comm-photo-preview-wrap">
+              <img id="commPhotoPreviewImg" class="comm-photo-preview" src="" alt="Previsualización de foto">
+              <button type="button" class="comm-photo-remove-btn" onclick="window.removeCommunityPhoto()" data-i18n="community.modalPhotoRemove">Quitar foto</button>
+            </div>
+          </div>
+
+          <div id="commSuccessMsg" style="display:none;font-size:0.85em;padding:10px 14px;border-radius:12px;background:rgba(48,209,88,0.15);color:#30d158;border:1px solid rgba(48,209,88,0.3);margin-bottom:14px;" data-i18n="community.modalSuccess">
+            ¡Muchas gracias! Tu historia se ha publicado en la comunidad.
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:18px;">
+            <button type="submit" class="btn btn-primary" style="flex:1;padding:12px;cursor:pointer;" data-i18n="community.modalSubmit">Publicar mi Experiencia</button>
+            <button type="button" class="btn btn-secondary" onclick="window.closeCommunityModal()" style="padding:12px 18px;cursor:pointer;" data-i18n="community.modalClose">Cerrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div>
+        <strong>leptium FenixFrame</strong> © 2026. <span data-i18n="footer.rights">Todos los derechos reservados.</span>
+      </div>
+
+      <div class="social-links-row" style="gap:12px;">
+        <a href="https://x.com/leptiumFrame" target="_blank" rel="noopener noreferrer" style="color:var(--text-muted);display:flex;align-items:center;" title="X (Twitter)">
+          <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://instagram.com/leptiumFrame" target="_blank" rel="noopener noreferrer" style="color:var(--text-muted);display:flex;align-items:center;" title="Instagram">
+          <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://github.com/leptium/leptiumFrame" target="_blank" rel="noopener noreferrer" style="color:var(--text-muted);display:flex;align-items:center;" title="GitHub">
+          <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+        <a href="https://reddit.com/r/leptiumFrame" target="_blank" rel="noopener noreferrer" style="color:var(--text-muted);display:flex;align-items:center;" title="Reddit">
+          <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.703zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+        </a>
+      </div>
+
+      <div style="display:flex;gap:20px;">
+        <a href="./app" style="color:inherit;text-decoration:none;" data-i18n="nav.openApp">Abrir Marco</a>
+        <a href="#features" style="color:inherit;text-decoration:none;" data-i18n="nav.features">Características</a>
+        <a href="#pricing" style="color:inherit;text-decoration:none;" data-i18n="nav.pricing">Precios</a>
+        <a href="#community" style="color:inherit;text-decoration:none;" data-i18n="nav.community">Comunidad</a>
+      </div>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { i18n } from '/src/core/i18n/index.js';
+    import { getCheckoutUrl } from '/src/core/config/payments.js';
+
+    const STAR_SVG = `<svg class="sf-star" width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" stroke="#ffd60a" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+    const FIVE_STARS_HTML = `<div class="experience-stars" aria-label="5 de 5 estrellas">${STAR_SVG.repeat(5)}</div>`;
+
+    window.setAppLanguage = function(lang) {
+      i18n.setLanguage(lang);
+    };
+
+    // Vincular dinámicamente las URLs de Lemon Squeezy
+    const buyBasic = document.getElementById('buyBtnBasic');
+    const buyPro = document.getElementById('buyBtnPro');
+    const buyMaker = document.getElementById('buyBtnMaker');
+
+    if (buyBasic) buyBasic.href = getCheckoutUrl('basic');
+    if (buyPro) buyPro.href = getCheckoutUrl('pro');
+    if (buyMaker) buyMaker.href = getCheckoutUrl('maker');
+
+    // Inicializar Lemon.js cuando esté cargado
+    if (window.createLemonSqueezy) {
+      window.createLemonSqueezy();
+    } else {
+      window.addEventListener('lemon:ready', () => {
+        window.createLemonSqueezy?.();
+      });
+    }
+
+    // Control del Menú Móvil (Drawer & Overlay)
+    window.toggleMobileNav = function() {
+      const drawer = document.getElementById('mobileNavDrawer');
+      const overlay = document.getElementById('mobileNavOverlay');
+      const btn = document.getElementById('hamburgerBtn');
+      const isOpen = drawer?.classList.contains('is-open');
+      if (isOpen) {
+        window.closeMobileNav();
+      } else {
+        drawer?.classList.add('is-open');
+        overlay?.classList.add('is-open');
+        btn?.classList.add('is-active');
+        document.body.style.overflow = 'hidden';
+      }
+    };
+
+    window.closeMobileNav = function() {
+      const drawer = document.getElementById('mobileNavDrawer');
+      const overlay = document.getElementById('mobileNavOverlay');
+      const btn = document.getElementById('hamburgerBtn');
+      drawer?.classList.remove('is-open');
+      overlay?.classList.remove('is-open');
+      btn?.classList.remove('is-active');
+      document.body.style.overflow = '';
+    };
+
+    // Subida y Previsualización de Foto de Comunidad (con compresión en canvas para localStorage)
+    window._selectedCommunityPhoto = '';
+
+    window.handleCommunityPhotoUpload = function(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          // Escalar a un máximo de 800px para almacenamiento local eficiente y ultra rápido
+          const maxDim = 800;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+          window._selectedCommunityPhoto = compressedDataUrl;
+          const previewImg = document.getElementById('commPhotoPreviewImg');
+          const previewWrap = document.getElementById('commPhotoPreviewWrap');
+          if (previewImg && previewWrap) {
+            previewImg.src = compressedDataUrl;
+            previewWrap.style.display = 'block';
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.removeCommunityPhoto = function() {
+      window._selectedCommunityPhoto = '';
+      const input = document.getElementById('commPhotoInput');
+      if (input) input.value = '';
+      const previewImg = document.getElementById('commPhotoPreviewImg');
+      const previewWrap = document.getElementById('commPhotoPreviewWrap');
+      if (previewImg) previewImg.src = '';
+      if (previewWrap) previewWrap.style.display = 'none';
+    };
+
+    // Gestión del Modal de Comunidad
+    window.openCommunityModal = function() {
+      const modal = document.getElementById('communityModal');
+      const msg = document.getElementById('commSuccessMsg');
+      if (msg) msg.style.display = 'none';
+      if (modal) modal.classList.add('active');
+    };
+
+    window.closeCommunityModal = function() {
+      const modal = document.getElementById('communityModal');
+      if (modal) modal.classList.remove('active');
+      window.removeCommunityPhoto();
+    };
+
+    window.submitCommunityStory = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('commNameInput')?.value.trim();
+      const city = document.getElementById('commCityInput')?.value.trim() || 'Comunidad';
+      const device = document.getElementById('commDeviceInput')?.value.trim();
+      const story = document.getElementById('commStoryInput')?.value.trim();
+      const photo = window._selectedCommunityPhoto || '';
+
+      if (!name || !device || !story) return;
+
+      const newStory = { name, city, device, story, photo, timestamp: Date.now() };
+
+      // Guardar localmente (máximo 20 historias recientes)
+      try {
+        const saved = JSON.parse(localStorage.getItem('leptium_community_stories') || '[]');
+        saved.unshift(newStory);
+        localStorage.setItem('leptium_community_stories', JSON.stringify(saved.slice(0, 20)));
+      } catch (err) {
+        console.warn('No se pudo guardar la historia en localStorage:', err);
+      }
+
+      // Renderizar inmediatamente en el grid
+      const grid = document.getElementById('experiencesGrid');
+      if (grid) {
+        const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'LF';
+        const photoHtml = photo ? `<img src="${photo}" class="experience-card-photo" alt="Montaje de ${device}" loading="lazy">` : '';
+        const card = document.createElement('div');
+        card.className = 'experience-card';
+        card.innerHTML = `
+          <div>
+            <div class="experience-header">
+              <div class="experience-author-wrap">
+                <div class="experience-avatar" style="background:#ffd60a;color:#000;">${initials}</div>
+                <div>
+                  <div class="experience-author-name">${name}</div>
+                  <div class="experience-author-loc">${city} • <span style="color:#30d158;font-weight:600;">Recién publicado</span></div>
+                </div>
+              </div>
+              <div class="experience-device-pill">
+                <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
+                <span>${device}</span>
+              </div>
+            </div>
+            ${photoHtml}
+            ${FIVE_STARS_HTML}
+            <p class="experience-quote">"${story}"</p>
+          </div>
+        `;
+        grid.prepend(card);
+      }
+
+      const msg = document.getElementById('commSuccessMsg');
+      if (msg) msg.style.display = 'block';
+
+      setTimeout(() => {
+        window.closeCommunityModal();
+        const form = document.getElementById('communityForm');
+        if (form) form.reset();
+        window.removeCommunityPhoto();
+      }, 1500);
+    };
+
+    // Cargar historias guardadas previamente
+    try {
+      const saved = JSON.parse(localStorage.getItem('leptium_community_stories') || '[]');
+      const grid = document.getElementById('experiencesGrid');
+      if (grid && saved.length > 0) {
+        saved.forEach(item => {
+          const initials = item.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'LF';
+          const photoHtml = item.photo ? `<img src="${item.photo}" class="experience-card-photo" alt="Montaje de ${item.device}" loading="lazy">` : '';
+          const card = document.createElement('div');
+          card.className = 'experience-card';
+          card.innerHTML = `
+            <div>
+              <div class="experience-header">
+                <div class="experience-author-wrap">
+                  <div class="experience-avatar" style="background:#ffd60a;color:#000;">${initials}</div>
+                  <div>
+                    <div class="experience-author-name">${item.name}</div>
+                    <div class="experience-author-loc">${item.city}</div>
+                  </div>
+                </div>
+                <div class="experience-device-pill">
+                  <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
+                  <span>${item.device}</span>
+                </div>
+              </div>
+              ${photoHtml}
+              ${FIVE_STARS_HTML}
+              <p class="experience-quote">"${item.story}"</p>
+            </div>
+          `;
+          grid.prepend(card);
+        });
+      }
+    } catch (err) {}
+
+    // Inicializar traducción al cargar el DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      i18n.translateDOM();
+    });
+    // Por si el DOM ya estaba cargado
+    if (document.readyState !== 'loading') {
+      i18n.translateDOM();
+    }
+  </script>
+</body>
+</html>

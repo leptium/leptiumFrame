@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#18181f" />
+      <stop offset="100%" stop-color="#09090c" />
+    </radialGradient>
+    <radialGradient id="cyanGlow" cx="25%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="rgba(50, 173, 230, 0.22)" />
+      <stop offset="100%" stop-color="rgba(50, 173, 230, 0)" />
+    </radialGradient>
+    <radialGradient id="goldGlow" cx="75%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="rgba(255, 214, 10, 0.20)" />
+      <stop offset="100%" stop-color="rgba(255, 214, 10, 0)" />
+    </radialGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.08)" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.02)" />
+    </linearGradient>
+    <linearGradient id="goldTextGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd60a" />
+      <stop offset="100%" stop-color="#ff9f0a" />
+    </linearGradient>
+    <linearGradient id="pillGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.1)" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.05)" />
+    </linearGradient>
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="36" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" />
+
+  <!-- Ambient Light Spheres -->
+  <circle cx="300" cy="220" r="420" fill="url(#cyanGlow)" />
+  <circle cx="920" cy="340" r="460" fill="url(#goldGlow)" />
+
+  <!-- Geometric Grid Accent Overlay -->
+  <g opacity="0.04" stroke="#ffffff" stroke-width="1">
+    <line x1="0" y1="105" x2="1200" y2="105" />
+    <line x1="0" y1="210" x2="1200" y2="210" />
+    <line x1="0" y1="315" x2="1200" y2="315" />
+    <line x1="0" y1="420" x2="1200" y2="420" />
+    <line x1="0" y1="525" x2="1200" y2="525" />
+    <line x1="200" y1="0" x2="200" y2="630" />
+    <line x1="400" y1="0" x2="400" y2="630" />
+    <line x1="600" y1="0" x2="600" y2="630" />
+    <line x1="800" y1="0" x2="800" y2="630" />
+    <line x1="1000" y1="0" x2="1000" y2="630" />
+  </g>
+
+  <!-- Central Glassmorphic Card Container -->
+  <rect x="80" y="70" width="1040" height="490" rx="32" fill="url(#cardGrad)" stroke="rgba(255, 255, 255, 0.16)" stroke-width="1.5" filter="url(#dropShadow)" />
+
+  <!-- Top Announcement Tag -->
+  <g transform="translate(130, 115)">
+    <rect width="280" height="36" rx="18" fill="url(#pillGrad)" stroke="rgba(255, 214, 10, 0.35)" stroke-width="1" />
+    <circle cx="18" cy="18" r="4" fill="#ffd60a" />
+    <text x="32" y="23" fill="#ffd60a" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="14" font-weight="700" letter-spacing="0.5">SMART DIGITAL FRAME 2.0</text>
+  </g>
+
+  <!-- Brand Title -->
+  <text x="130" y="215" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="64" font-weight="800" letter-spacing="-1.5">
+    leptium<tspan fill="url(#goldTextGrad)">Frame</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="130" y="265" fill="rgba(255, 255, 255, 0.88)" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="28" font-weight="500">
+    El marco de fotos inteligente para iPad y pantallas 24/7
+  </text>
+
+  <!-- Value Narrative Description -->
+  <text x="130" y="315" fill="rgba(255, 255, 255, 0.60)" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="20" font-weight="400">
+    Privacidad Zero-Knowledge en tu dispositivo + Conexión directa a tu nube personal.
+  </text>
+
+  <!-- Feature Pills -->
+  <g transform="translate(130, 370)">
+    <!-- Pill 1: Zero-Knowledge -->
+    <rect x="0" y="0" width="220" height="42" rx="21" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" />
+    <text x="24" y="26" fill="#32ade6" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="15" font-weight="600">✦ 100% Privado &amp; Local</text>
+
+    <!-- Pill 2: Direct Cloud -->
+    <rect x="235" y="0" width="220" height="42" rx="21" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" />
+    <text x="259" y="26" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="15" font-weight="600">✦ Nube Personal Directa</text>
+
+    <!-- Pill 3: Collages 2x2 -->
+    <rect x="470" y="0" width="180" height="42" rx="21" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" />
+    <text x="494" y="26" fill="#ffd60a" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="15" font-weight="600">✦ Collages 2x2 en 4K</text>
+
+    <!-- Pill 4: Anti-burn-in -->
+    <rect x="665" y="0" width="200" height="42" rx="21" fill="rgba(255, 255, 255, 0.06)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="1" />
+    <text x="689" y="26" fill="rgba(255, 255, 255, 0.85)" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="15" font-weight="600">✦ Protección OLED 24/7</text>
+  </g>
+
+  <!-- Bottom Bar with URL -->
+  <g transform="translate(130, 480)">
+    <text x="0" y="0" fill="rgba(255, 255, 255, 0.45)" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="16" font-weight="500">
+      Disponible gratis como Progressive Web App (PWA) instalable
+    </text>
+    <text x="810" y="0" fill="#ffd60a" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="18" font-weight="700" text-anchor="end">
+      leptiumframe.app ➔
+    </text>
+  </g>
+
+  <!-- Stylized Minimal iPad / Frame Outline (Right Side Vector) -->
+  <g transform="translate(850, 140)">
+    <!-- Device Frame -->
+    <rect width="210" height="150" rx="14" fill="#0f0f14" stroke="rgba(255, 255, 255, 0.28)" stroke-width="2.5" />
+    <!-- Screen Bezel Area -->
+    <rect x="10" y="10" width="190" height="130" rx="8" fill="#15151c" />
+    <!-- Photo 1 -->
+    <rect x="16" y="16" width="86" height="56" rx="4" fill="#1c2536" />
+    <!-- Photo 2 -->
+    <rect x="108" y="16" width="86" height="56" rx="4" fill="#2d251d" />
+    <!-- Photo 3 -->
+    <rect x="16" y="76" width="86" height="56" rx="4" fill="#241e2e" />
+    <!-- Photo 4 -->
+    <rect x="108" y="76" width="86" height="56" rx="4" fill="#1a2b25" />
+    <!-- Widget in center corner -->
+    <rect x="130" y="24" width="56" height="20" rx="6" fill="rgba(0,0,0,0.65)" />
+    <circle cx="140" cy="34" r="3" fill="#ffd60a" />
+    <text x="148" y="38" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" font-size="9" font-weight="600">10:42</text>
+  </g>
+</svg>
