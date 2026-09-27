@@ -91,6 +91,14 @@ function initDOMReferences() {
   elements.overlay = document.getElementById('overlay');
   elements.ambientHeader = document.getElementById('ambientHeader');
   elements.ambientWidget = document.getElementById('ambientWidget');
+  elements.ambientContextMenu = document.getElementById('ambientContextMenu');
+  elements.menuToggleFormat = document.getElementById('menuToggleFormat');
+  elements.menuOpenCalendar = document.getElementById('menuOpenCalendar');
+  elements.menuOpenSettings = document.getElementById('menuOpenSettings');
+  elements.calendarModal = document.getElementById('calendarModal');
+  elements.calendarModalTitle = document.getElementById('calendarModalTitle');
+  elements.calendarGridContainer = document.getElementById('calendarGridContainer');
+  elements.btnCloseCalendarModal = document.getElementById('btnCloseCalendarModal');
   elements.clock = document.getElementById('currentTimeText') || document.getElementById('clock');
   elements.currentDate = document.getElementById('currentDateText') || document.getElementById('currentDate');
   elements.weatherWidget = document.getElementById('weatherWidget');
@@ -471,14 +479,21 @@ function updateClockAndGreeting() {
     dateEl.textContent = formatLocalDate(now);
   }
 
-  // 3. Formatear Hora
+  // 3. Formatear Hora (con soporte 12h / 24h)
   const timeEl = document.getElementById('currentTimeText') || elements.clock;
   if (timeEl) {
     const lang = (typeof localStorage !== 'undefined' && localStorage.getItem('leptium_language')) || i18n.getLanguage() || 'es';
-    timeEl.textContent = now.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', {
+    const savedTimeFormat = typeof localStorage !== 'undefined' ? localStorage.getItem('leptium_time_format') : null;
+    const timeOptions = {
       hour: '2-digit',
       minute: '2-digit'
-    });
+    };
+    if (savedTimeFormat === '12h') {
+      timeOptions.hour12 = true;
+    } else if (savedTimeFormat === '24h') {
+      timeOptions.hour12 = false;
+    }
+    timeEl.textContent = now.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', timeOptions);
   }
 
   const { autoDim } = store.getState();
@@ -519,6 +534,9 @@ function applyLanguageToUI() {
   // Refrescar saludo y fecha al instante si el usuario cambia de idioma
   updateClockAndGreeting();
   updateCollageSelectionUI();
+  if (elements.calendarModal && !elements.calendarModal.hidden) {
+    renderMonthlyCalendar();
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -934,6 +952,182 @@ function bindManualWeatherEvents() {
     btnF.addEventListener('click', (e) => {
       e.stopPropagation();
       setUnit('fahrenheit');
+    });
+  }
+}
+
+function renderMonthlyCalendar() {
+  const grid = elements.calendarGridContainer || document.getElementById('calendarGridContainer');
+  const titleEl = elements.calendarModalTitle || document.getElementById('calendarModalTitle');
+  if (!grid) return;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+
+  const lang = getUserLanguageCode();
+  const localeMap = { es: 'es-ES', en: 'en-US', fr: 'fr-FR' };
+  const locale = localeMap[lang] || 'es-ES';
+
+  if (titleEl) {
+    const monthLabel = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(now);
+    titleEl.removeAttribute('data-i18n');
+    titleEl.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  }
+
+  grid.innerHTML = '';
+
+  const weekdayFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  // Base Sunday (2024-01-07 was Sunday)
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(2024, 0, 7 + i);
+    const wdEl = document.createElement('div');
+    wdEl.className = 'calendar-weekday';
+    wdEl.textContent = weekdayFormatter.format(d).replace('.', '').slice(0, 3);
+    grid.appendChild(wdEl);
+  }
+
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.className = 'calendar-day is-empty';
+    grid.appendChild(emptyCell);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayCell = document.createElement('div');
+    dayCell.className = day === today ? 'calendar-day is-today' : 'calendar-day';
+    dayCell.textContent = String(day);
+    grid.appendChild(dayCell);
+  }
+}
+
+function openCalendarModal(event) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  const modal = elements.calendarModal || document.getElementById('calendarModal');
+  if (!modal) return;
+  renderMonthlyCalendar();
+  modal.hidden = false;
+}
+
+function closeCalendarModal(event) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  const modal = elements.calendarModal || document.getElementById('calendarModal');
+  if (modal) modal.hidden = true;
+}
+
+function bindAmbientContextMenu() {
+  // Manejador del menú contextual al tocar el widget ambiental
+  const ambientWidget = elements.ambientWidget || document.getElementById('ambientWidget');
+  const ambientMenu = elements.ambientContextMenu || document.getElementById('ambientContextMenu');
+  const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
+  const btnToggleFormat = elements.menuToggleFormat || document.getElementById('menuToggleFormat');
+  const btnOpenCalendar = elements.menuOpenCalendar || document.getElementById('menuOpenCalendar');
+  const btnOpenSettings = elements.menuOpenSettings || document.getElementById('menuOpenSettings');
+  const calendarModal = elements.calendarModal || document.getElementById('calendarModal');
+  const btnCloseCalendar = elements.btnCloseCalendarModal || document.getElementById('btnCloseCalendarModal');
+
+  if (ambientWidget && ambientMenu) {
+    ambientWidget.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Si el usuario tocó específicamente el clima, no abrir el menú del reloj
+      if (weatherWidget && weatherWidget.contains(e.target)) return;
+
+      const isHidden = ambientMenu.hasAttribute('hidden');
+      if (isHidden) {
+        ambientMenu.removeAttribute('hidden');
+        ambientWidget.setAttribute('aria-expanded', 'true');
+      } else {
+        ambientMenu.setAttribute('hidden', '');
+        ambientWidget.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    ambientWidget.addEventListener('keydown', (e) => {
+      if (weatherWidget && weatherWidget.contains(e.target)) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
+        const isHidden = ambientMenu.hasAttribute('hidden');
+        if (isHidden) {
+          ambientMenu.removeAttribute('hidden');
+          ambientWidget.setAttribute('aria-expanded', 'true');
+        } else {
+          ambientMenu.setAttribute('hidden', '');
+          ambientWidget.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      ambientMenu.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if (!ambientWidget.contains(e.target) && !ambientMenu.contains(e.target)) {
+        ambientMenu.setAttribute('hidden', '');
+        ambientWidget.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  if (btnToggleFormat) {
+    btnToggleFormat.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentFmt = (typeof localStorage !== 'undefined' && localStorage.getItem('leptium_time_format')) || '24h';
+      const nextFmt = currentFmt === '12h' ? '24h' : '12h';
+      try {
+        localStorage.setItem('leptium_time_format', nextFmt);
+      } catch (_) {}
+      updateClockAndGreeting();
+      if (ambientMenu) ambientMenu.setAttribute('hidden', '');
+      if (ambientWidget) ambientWidget.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  if (btnOpenCalendar) {
+    btnOpenCalendar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (ambientMenu) ambientMenu.setAttribute('hidden', '');
+      if (ambientWidget) ambientWidget.setAttribute('aria-expanded', 'false');
+      openCalendarModal(e);
+    });
+  }
+
+  if (btnOpenSettings) {
+    btnOpenSettings.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (ambientMenu) ambientMenu.setAttribute('hidden', '');
+      if (ambientWidget) ambientWidget.setAttribute('aria-expanded', 'false');
+      toggleSettings(e);
+    });
+  }
+
+  if (calendarModal) {
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      calendarModal.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+    const backdrop = calendarModal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeCalendarModal(e);
+      });
+    }
+  }
+
+  if (btnCloseCalendar) {
+    btnCloseCalendar.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeCalendarModal(e);
     });
   }
 }
@@ -2137,6 +2331,9 @@ async function bootstrap() {
   // Vincular eventos interactivos del widget de clima y modal de ubicación manual
   bindManualWeatherEvents();
 
+  // Vincular menú contextual desplegable de la tarjeta ambiental y visor de calendario
+  bindAmbientContextMenu();
+
   // Vincular botón de agregar fotografías (+) y modal selector de collage 2x2
   initAddMediaAndCollage();
 
@@ -2220,7 +2417,7 @@ async function bootstrap() {
   if (elements.wrapper) {
     elements.wrapper.addEventListener('touchstart', (e) => {
       // Ignorar si el toque se originó en controles interactivos, barras o botones
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
       touchStartX = e.changedTouches[0].screenX;
@@ -2229,7 +2426,7 @@ async function bootstrap() {
 
     elements.wrapper.addEventListener('touchend', (e) => {
       // Ignorar si el toque finalizó sobre controles interactivos para no activar el toque por zonas de la foto
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2237,7 +2434,13 @@ async function bootstrap() {
 
       if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+      if (elements.calendarModal && !elements.calendarModal.hidden) return;
       if (elements.collageModal && !elements.collageModal.hidden) return;
+      if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
+        elements.ambientContextMenu.setAttribute('hidden', '');
+        elements.ambientWidget?.setAttribute('aria-expanded', 'false');
+        return;
+      }
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') {
         closeSettings();
         return;
@@ -2269,13 +2472,19 @@ async function bootstrap() {
       if (Date.now() - lastTouchTimestamp < 600) return;
 
       // Evitar que el clic en botones, modales o toolbars cambie la foto
-      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
       if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+      if (elements.calendarModal && !elements.calendarModal.hidden) return;
       if (elements.collageModal && !elements.collageModal.hidden) return;
+      if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
+        elements.ambientContextMenu.setAttribute('hidden', '');
+        elements.ambientWidget?.setAttribute('aria-expanded', 'false');
+        return;
+      }
       if (elements.settingsModal && elements.settingsModal.style.display === 'block') {
         closeSettings();
         return;
@@ -2293,7 +2502,7 @@ async function bootstrap() {
     });
 
     // Detener propagación de toques en las barras de herramientas y widget ambiental
-    ['actionToolbar', 'ambientHeader', 'ambientWidget', 'hiddenZeroStateShield', 'topLeftContainer', 'topRightPanel', 'btnMoreInfoWrapper'].forEach((id) => {
+    ['actionToolbar', 'ambientHeader', 'ambientWidget', 'ambientContextMenu', 'hiddenZeroStateShield', 'topLeftContainer', 'topRightPanel', 'btnMoreInfoWrapper'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
@@ -2315,8 +2524,17 @@ async function bootstrap() {
     if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
 
     if (e.key === 'Escape') {
+      if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
+        elements.ambientContextMenu.setAttribute('hidden', '');
+        elements.ambientWidget?.setAttribute('aria-expanded', 'false');
+        return;
+      }
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) {
         closeManualLocationModal(e);
+        return;
+      }
+      if (elements.calendarModal && !elements.calendarModal.hidden) {
+        closeCalendarModal(e);
         return;
       }
       if (elements.collageModal && !elements.collageModal.hidden) {
@@ -2330,6 +2548,7 @@ async function bootstrap() {
 
     // No interceptar teclas si algún modal está abierto o si el foco está en un campo de texto
     if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
+    if (elements.calendarModal && !elements.calendarModal.hidden) return;
     if (elements.collageModal && !elements.collageModal.hidden) return;
     if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
@@ -2373,6 +2592,8 @@ async function bootstrap() {
 
   // Exponer controladores en window para compatibilidad con botones del HTML
   window.toggleSettings = toggleSettings;
+  window.openCalendarModal = openCalendarModal;
+  window.closeCalendarModal = closeCalendarModal;
   window.togglePause = togglePause;
   window.setSlideshowPlaybackState = setSlideshowPlaybackState;
   window.checkPhotoAvailability = checkPhotoAvailability;

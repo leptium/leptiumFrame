@@ -16,41 +16,56 @@
   <div id="wrapper">
     <!-- Unico Widget Ambiental en el Lienzo (Esquina Superior Derecha) -->
     <header id="ambientHeader" class="ambient-header-right ambient-overlay">
-      <div id="ambientWidget" class="ambient-card">
+      <!-- Tarjeta interactiva: Al tocar la hora/tarjeta abre el menú contextual -->
+      <div id="ambientWidget" class="ambient-card" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" title="Menú de opciones rápidas" data-i18n-title="ambient_quick_menu">
         
-        <!-- Linea 1: Saludo Dinamico -->
+        <!-- Línea 1: Saludo ambiental dinámico -->
         <div id="greetingRow" class="ambient-greeting">
           <span id="greetingIcon" class="greeting-icon">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
           </span>
-          <span id="greetingText" data-i18n="greeting_night">BUENAS NOCHES</span>
+          <span id="greetingText" class="greeting-text" data-i18n="greeting_night">Buenas noches</span>
         </div>
 
-        <!-- Linea 2: Fecha Formateada por Idioma -->
+        <!-- Línea 2: Fecha -->
         <div id="dateRow" class="ambient-date">
-          <span id="currentDateText">---</span>
+          <span id="currentDateText">--</span>
         </div>
 
-        <!-- Linea 3: Reloj Principal -->
+        <!-- Línea 3: Hora protagonista (Trigger principal) -->
         <div id="timeRow" class="ambient-time">
-          <span id="currentTimeText">00:00</span>
+          <span id="currentTimeText">--:--</span>
         </div>
 
-        <!-- Linea 4: Clima Interactivo -->
-        <div id="weatherWidget" class="ambient-weather unconfigured" role="button" tabindex="0">
+        <!-- Línea 4: Clima interactivo (Trigger de modal de clima) -->
+        <div id="weatherWidget" class="ambient-weather unconfigured" role="button" tabindex="0" title="Configurar clima" data-i18n-title="weather_title">
           <span id="weatherIcon" class="weather-icon">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
             </svg>
           </span>
           <span id="weatherTemp" class="weather-temp">--°</span>
-          <span class="weather-dot">•</span>
-          <span id="weatherCity" class="weather-city" data-i18n="weather_tap_set">Toca para fijar tu ciudad</span>
+          <span class="weather-dot">·</span>
+          <span id="weatherCity" class="weather-city" data-i18n="weather_tap_set">Toca para fijar</span>
         </div>
 
+      </div>
+
+      <!-- Menú Contextual Desplegable del Reloj -->
+      <div id="ambientContextMenu" class="ambient-context-menu" hidden>
+        <button type="button" class="menu-item" id="menuToggleFormat" data-i18n="menu_time_format">
+          Alternar 12h / 24h
+        </button>
+        <button type="button" class="menu-item" id="menuOpenCalendar" data-i18n="menu_calendar">
+          Ver calendario
+        </button>
+        <button type="button" class="menu-item" id="menuOpenSettings" data-i18n="menu_settings">
+          Ajustes del marco
+        </button>
       </div>
     </header>
     
@@ -475,6 +490,20 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Visor de Calendario Mensual -->
+  <div id="calendarModal" class="leptium-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="calendarModalTitle" class="modal-title" data-i18n="calendar_title">Calendario</span>
+        <button id="btnCloseCalendarModal" type="button" class="btn-icon" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="calendarGridContainer" class="calendar-grid-container"></div>
     </div>
   </div>
 

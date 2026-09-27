@@ -243,6 +243,16 @@ body.canvas-paused #emptyStateContainer {
   user-select: none;
   -webkit-user-select: none;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.ambient-card:hover {
+  background: rgba(28, 28, 28, 0.75);
+}
+
+.ambient-card:active {
+  transform: scale(0.98);
 }
 
 .ambient-greeting {
@@ -278,6 +288,7 @@ body.canvas-paused #emptyStateContainer {
   font-variant-numeric: tabular-nums;
 }
 
+/* Evitar que el clic en clima dispare el menú del reloj si se desea separar */
 .ambient-weather {
   display: inline-flex;
   align-items: center;
@@ -335,6 +346,94 @@ body.canvas-paused #emptyStateContainer {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Menú flotante emergente anclado al bloque ambiental */
+.ambient-context-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  background: rgba(22, 22, 22, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+  animation: menuPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ambient-context-menu[hidden] {
+  display: none !important;
+}
+
+.menu-item {
+  all: unset;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+@keyframes menuPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.calendar-grid-container {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  text-align: center;
+  font-size: 13px;
+  padding-top: 4px;
+}
+
+.calendar-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 0;
+}
+
+.calendar-day {
+  padding: 8px 0;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-day.is-today {
+  background: #ffd60a;
+  color: #0a0a0c;
+  font-weight: 700;
+}
+
+.calendar-day.is-empty {
+  visibility: hidden;
 }
 
 /* Modal minimalista y selector de collage (.leptium-modal) */
