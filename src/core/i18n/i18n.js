@@ -5,6 +5,7 @@ import { fr } from './locales/fr.js';
 const STORAGE_KEY = 'leptium_language';
 const SUPPORTED_LANGS = ['es', 'en', 'fr'];
 const TRANSLATIONS = { es, en, fr };
+export const I18N_MASTER = TRANSLATIONS;
 
 export class I18nEngine {
   constructor() {
@@ -103,6 +104,18 @@ export class I18nEngine {
       }
     });
 
+    // Traducir placeholders directos (data-i18n-placeholder)
+    const placeholderElements = root.querySelectorAll('[data-i18n-placeholder]');
+    placeholderElements.forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (key) {
+        const translated = this.t(key.trim());
+        if (typeof translated === 'string') {
+          el.setAttribute('placeholder', translated);
+        }
+      }
+    });
+
     // Traducir atributos (ej: data-i18n-attr="placeholder:hero.input,title:nav.tooltip")
     const attrElements = root.querySelectorAll('[data-i18n-attr]');
     attrElements.forEach(el => {
@@ -118,7 +131,7 @@ export class I18nEngine {
     });
 
     // Actualizar botones activos del selector de idioma si existen
-    const langBtns = root.querySelectorAll('.lang-btn');
+    const langBtns = root.querySelectorAll('.lang-btn, .lang-btn-app');
     langBtns.forEach(btn => {
       const btnLang = btn.getAttribute('data-lang');
       if (btnLang === this.currentLang) {

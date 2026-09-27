@@ -214,10 +214,23 @@ export const en = {
       evening: "GOOD EVENING"
     }
   },
+  weather_title: "Configure weather",
+  weather_use_gps: "Use my current location",
+  weather_or_manual: "or enter manually",
+  weather_placeholder: "City or zip code...",
+  weather_search_btn: "Search & set",
+  weather_search_err: "Location not found. Please verify and try again.",
+  weather_unit_label: "Temperature unit:",
+  weather_cta_tap: "Tap to set your city",
+  storage_clear_demo_btn: "Reset to demo gallery",
+  storage_clear_confirm: "Do you want to delete added photos and restore the demo gallery?",
+  zero_state_title: "All photos are hidden",
+  zero_state_desc: "You have marked all photos in this frame as hidden.",
+  zero_state_btn: "Restore visibility",
   zeroState: {
     title: "All photos are hidden",
-    desc: "You have marked all photographs in this frame as hidden. There is no content available to display.",
-    resetBtn: "Show all photographs"
+    desc: "You have marked all photos in this frame as hidden.",
+    resetBtn: "Restore visibility"
   },
   menu: {
     fullscreen: "Full Screen Mode",
@@ -256,8 +269,8 @@ export const en = {
     cleanScreen: "Screen Cleaning:",
     lock30s: "30s Lock",
     localStorageLabel: "Local storage:",
-    purgeRestoreDemo: "Purge & return to Demo",
-    confirmPurge: "Do you want to delete the photographs stored on this device and return to the demo collection?",
+    purgeRestoreDemo: "Reset to demo gallery",
+    confirmPurge: "Do you want to delete added photos and restore the demo gallery?",
     license: "License:",
     activateLicense: "Activate Pro...",
     close: "Close"

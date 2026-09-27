@@ -53,7 +53,7 @@
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
             <circle cx="12" cy="10" r="3"></circle>
           </svg>
-          <span id="weatherCity" class="weather-city">Toca para fijar tu ciudad</span>
+          <span id="weatherCity" class="weather-city" data-i18n="weather_cta_tap">Toca para fijar tu ciudad</span>
         </div>
       </div>
     </div>
@@ -103,10 +103,10 @@
             <line x1="1" y1="1" x2="23" y2="23"></line>
           </svg>
         </div>
-        <h2 class="zero-state-title" data-i18n="zeroState.title">Todas las fotos están ocultas</h2>
-        <p class="zero-state-desc" data-i18n="zeroState.desc">Has marcado todas las fotografías de este marco como ocultas. No hay contenido disponible para mostrar.</p>
-        <button id="btnResetHiddenPhotos" class="zero-state-btn" type="button" data-i18n="zeroState.resetBtn">
-          Mostrar todas las fotografías
+        <h2 class="zero-state-title" data-i18n="zero_state_title">Todas las fotos están ocultas</h2>
+        <p class="zero-state-desc" data-i18n="zero_state_desc">Has marcado todas las fotografías de este marco como ocultas.</p>
+        <button id="btnResetHiddenPhotos" class="zero-state-btn" type="button" data-i18n="zero_state_btn">
+          Restablecer visibilidad
         </button>
       </div>
     </div>
@@ -301,7 +301,7 @@
 
     <div class="setting-row">
       <span data-i18n="settings.localStorageLabel">Almacenamiento local:</span>
-      <button id="btnPurgeStorage" class="btn-action" onclick="window.resetLocalData()" style="color:#ff453a;border-color:rgba(255,69,58,0.3);font-size:0.85em;padding:6px 12px;" data-i18n="settings.purgeRestoreDemo">Purgar y volver a Demo</button>
+      <button id="btnPurgeStorage" class="btn-action" onclick="window.resetLocalData()" style="color:#ff453a;border-color:rgba(255,69,58,0.3);font-size:0.85em;padding:6px 12px;" data-i18n="storage_clear_demo_btn">Restablecer a fotos de muestra</button>
     </div>
 
     <div class="setting-row" style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 14px;">
@@ -495,7 +495,7 @@
     <div class="modal-backdrop"></div>
     <div class="modal-card">
       <div class="modal-header">
-        <span class="modal-title">Configurar clima</span>
+        <span class="modal-title" data-i18n="weather_title">Configurar clima</span>
         <button id="btnCloseCityModal" type="button" class="btn-icon" aria-label="Cerrar">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -511,11 +511,11 @@
             <line x1="1" y1="12" x2="5" y2="12"></line>
             <line x1="19" y1="12" x2="23" y2="12"></line>
           </svg>
-          Usar mi ubicación actual
+          <span data-i18n="weather_use_gps">Usar mi ubicación actual</span>
         </button>
 
         <div class="modal-divider">
-          <span>o ingresar manualmente</span>
+          <span data-i18n="weather_or_manual">o ingresar manualmente</span>
         </div>
 
         <!-- Opción 2: Entrada Manual -->
@@ -524,16 +524,18 @@
             type="text" 
             id="inputCitySearch" 
             placeholder="Ciudad o código postal..." 
+            data-i18n-placeholder="weather_placeholder"
+            data-i18n-attr="placeholder:weather_placeholder"
             autocomplete="off" 
             required 
           />
-          <button type="submit" id="btnSaveCity" class="modal-btn-primary">Buscar y fijar</button>
+          <button type="submit" id="btnSaveCity" class="modal-btn-primary" data-i18n="weather_search_btn">Buscar y fijar</button>
         </form>
-        <p id="citySearchError" class="modal-hint-error" hidden>No se encontró la ubicación. Revisa el texto e intenta de nuevo.</p>
+        <p id="citySearchError" class="modal-hint-error" data-i18n="weather_search_err" hidden>No se encontró la ubicación. Revisa el texto e intenta de nuevo.</p>
 
         <!-- Selector de Unidad (°C / °F) -->
         <div class="weather-unit-selector">
-          <span class="unit-label">Unidad de temperatura:</span>
+          <span class="unit-label" data-i18n="weather_unit_label">Unidad de temperatura:</span>
           <div class="unit-toggle-group">
             <button type="button" id="btnUnitC" class="unit-btn active">°C</button>
             <button type="button" id="btnUnitF" class="unit-btn">°F</button>

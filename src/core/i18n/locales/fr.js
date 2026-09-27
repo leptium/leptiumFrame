@@ -214,10 +214,23 @@ export const fr = {
       evening: "BONSOIR"
     }
   },
+  weather_title: "Configurer la météo",
+  weather_use_gps: "Utiliser ma position actuelle",
+  weather_or_manual: "ou saisir manuellement",
+  weather_placeholder: "Ville ou code postal...",
+  weather_search_btn: "Rechercher et définir",
+  weather_search_err: "Emplacement introuvable. Veuillez vérifier et réessayer.",
+  weather_unit_label: "Unité de température :",
+  weather_cta_tap: "Touchez pour définir votre ville",
+  storage_clear_demo_btn: "Réinitialiser la galerie démo",
+  storage_clear_confirm: "Voulez-vous supprimer les photos ajoutées et restaurer la galerie de démonstration ?",
+  zero_state_title: "Toutes les photos sont masquées",
+  zero_state_desc: "Vous avez masqué toutes les photos de ce cadre.",
+  zero_state_btn: "Restaurer la visibilité",
   zeroState: {
     title: "Toutes les photos sont masquées",
-    desc: "Vous avez masqué toutes les photographies de ce cadre. Aucun contenu n'est disponible pour l'affichage.",
-    resetBtn: "Afficher toutes les photographies"
+    desc: "Vous avez masqué toutes les photos de ce cadre.",
+    resetBtn: "Restaurer la visibilité"
   },
   menu: {
     fullscreen: "Mode Plein Écran",
@@ -256,8 +269,8 @@ export const fr = {
     cleanScreen: "Nettoyage de l'écran :",
     lock30s: "Verrouillage 30s",
     localStorageLabel: "Stockage local :",
-    purgeRestoreDemo: "Purger et revenir à la Démo",
-    confirmPurge: "Voulez-vous supprimer les photographies enregistrées sur cet appareil et revenir à la collection de démonstration ?",
+    purgeRestoreDemo: "Réinitialiser la galerie démo",
+    confirmPurge: "Voulez-vous supprimer les photos ajoutées et restaurer la galerie de démonstration ?",
     license: "Licence :",
     activateLicense: "Activer Pro...",
     close: "Fermer"

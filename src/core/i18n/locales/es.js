@@ -214,10 +214,23 @@ export const es = {
       evening: "BUENAS NOCHES"
     }
   },
+  weather_title: "Configurar clima",
+  weather_use_gps: "Usar mi ubicación actual",
+  weather_or_manual: "o ingresar manualmente",
+  weather_placeholder: "Ciudad o código postal...",
+  weather_search_btn: "Buscar y fijar",
+  weather_search_err: "No se encontró la ubicación. Revisa el texto e intenta de nuevo.",
+  weather_unit_label: "Unidad de temperatura:",
+  weather_cta_tap: "Toca para fijar tu ciudad",
+  storage_clear_demo_btn: "Restablecer a fotos de muestra",
+  storage_clear_confirm: "¿Deseas eliminar las fotos añadidas y restaurar la galería de muestra?",
+  zero_state_title: "Todas las fotos están ocultas",
+  zero_state_desc: "Has marcado todas las fotografías de este marco como ocultas.",
+  zero_state_btn: "Restablecer visibilidad",
   zeroState: {
     title: "Todas las fotos están ocultas",
-    desc: "Has marcado todas las fotografías de este marco como ocultas. No hay contenido disponible para mostrar.",
-    resetBtn: "Mostrar todas las fotografías"
+    desc: "Has marcado todas las fotografías de este marco como ocultas.",
+    resetBtn: "Restablecer visibilidad"
   },
   menu: {
     fullscreen: "Modo Pantalla Completa",
@@ -256,8 +269,8 @@ export const es = {
     cleanScreen: "Limpieza de pantalla:",
     lock30s: "30s Bloqueo",
     localStorageLabel: "Almacenamiento local:",
-    purgeRestoreDemo: "Purgar y volver a Demo",
-    confirmPurge: "¿Deseas borrar las fotografías guardadas en este dispositivo y regresar a la colección de demostración?",
+    purgeRestoreDemo: "Restablecer a fotos de muestra",
+    confirmPurge: "¿Deseas eliminar las fotos añadidas y restaurar la galería de muestra?",
     license: "Licencia:",
     activateLicense: "Activar Pro...",
     close: "Cerrar"

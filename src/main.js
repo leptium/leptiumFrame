@@ -4,7 +4,7 @@ import { store } from './core/state/store.js';
 import { weatherService } from './core/weather/weatherService.js';
 import { BurnInShield } from './core/burnin/burnInShield.js';
 import { CollageEngine, getCollagePhotoSet } from './core/collage/collageEngine.js';
-import { i18n } from './core/i18n/index.js';
+import { i18n, I18N_MASTER } from './core/i18n/index.js';
 import { sponsorEngine } from './core/ads/sponsorEngine.js';
 import { getUnsplashPhotoBlobs } from './core/collage/unsplashPhotos.js';
 import { cloudConnector } from './core/cloud/cloudConnector.js';
@@ -15,10 +15,11 @@ import { FenixDB } from './core/storage/db.js';
 import { getCheckoutUrl } from './core/config/payments.js';
 import { DEMO_CATALOG } from './core/catalog/demoCatalog.js';
 
-export { DEMO_CATALOG, getCollagePhotoSet };
+export { DEMO_CATALOG, getCollagePhotoSet, I18N_MASTER };
 if (typeof window !== 'undefined') {
   window.DEMO_CATALOG = DEMO_CATALOG;
   window.getCollagePhotoSet = getCollagePhotoSet;
+  window.I18N_MASTER = I18N_MASTER;
 }
 
 // Activar WakeLock para mantener pantalla encendida 24/7 con fallback de video canvas invisible
@@ -273,10 +274,10 @@ async function getPhotoBlobFromIndexedDB(id) {
 async function loadLocalDatabasePhotos() {
   try {
     const dbPhotos = await FenixDB.getAllPhotos();
+    // Revocar explícitamente URLs de blob anteriores para evitar memory leaks en WebKit
+    clearAllBlobUrls();
     if (dbPhotos && dbPhotos.length > 0) {
-      // Revocar explícitamente URLs de blob anteriores para evitar memory leaks en WebKit
-      clearAllBlobUrls();
-      userLocalPhotos = dbPhotos.map((p) => ({
+      userLocalPhotos = [...dbPhotos].reverse().map((p) => ({
         id: p.id,
         blob: p.blob,
         name: (p.filename || `foto-${p.id}`).replace(/\.[a-z0-9]+$/i, ''),
@@ -288,6 +289,7 @@ async function loadLocalDatabasePhotos() {
       }));
       return userLocalPhotos;
     }
+    userLocalPhotos = [];
   } catch (e) {
     console.warn('[FenixDB] Error al leer fotos:', e);
   }
@@ -480,6 +482,10 @@ let currentTemperatureC = null;
 let currentUnit = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY_UNITS)) || 'fahrenheit';
 
 function getUserLanguageCode() {
+  if (typeof i18n?.getLanguage === 'function') {
+    const appLang = i18n.getLanguage();
+    if (appLang) return String(appLang).split('-')[0].toLowerCase();
+  }
   const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'es';
   return String(lang).split('-')[0].toLowerCase() || 'es';
 }
@@ -601,7 +607,8 @@ function setWeatherCTAState() {
     weatherTemp.textContent = '--°';
   }
   if (weatherCity) {
-    weatherCity.textContent = 'Toca para fijar tu ciudad';
+    weatherCity.setAttribute('data-i18n', 'weather_cta_tap');
+    weatherCity.textContent = i18n.t('weather_cta_tap') || 'Toca para fijar tu ciudad';
   }
   if (conditionIcon) {
     conditionIcon.innerHTML = getWeatherConditionSvg(2, 1);
@@ -634,6 +641,7 @@ function updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay
   }
 
   if (weatherCity && locationStr) {
+    weatherCity.removeAttribute('data-i18n');
     weatherCity.textContent = locationStr;
   }
 
@@ -1168,8 +1176,37 @@ function checkPhotoAvailability(totalInDB, visibleCount) {
   return true;
 }
 
-function reloadVisiblePhotosAndStart() {
+function actualizarFuenteUI(tipo) {
+  if (!elements.currentSourceBadge) return;
+  if (tipo === 'cloud' && cloudConnector.isConnected()) {
+    elements.currentSourceBadge.setAttribute('data-i18n', 'settings.sourceCloud');
+    elements.currentSourceBadge.innerText = i18n.t('settings.sourceCloud') || 'Nube Personal';
+    elements.currentSourceBadge.style.color = '#32ade6';
+    elements.currentSourceBadge.style.background = 'rgba(50, 173, 230, 0.18)';
+  } else if (Array.isArray(userLocalPhotos) && userLocalPhotos.length > 0) {
+    elements.currentSourceBadge.setAttribute('data-i18n', 'settings.sourceLocal');
+    elements.currentSourceBadge.innerText = i18n.t('settings.sourceLocal') || 'Carrete / Local';
+    elements.currentSourceBadge.style.color = '#ffd60a';
+    elements.currentSourceBadge.style.background = 'rgba(255, 214, 10, 0.15)';
+  } else {
+    elements.currentSourceBadge.setAttribute('data-i18n', 'settings.sourceDemo');
+    elements.currentSourceBadge.innerText = i18n.t('settings.sourceDemo') || 'Galería Demo';
+    elements.currentSourceBadge.style.color = '#ffd60a';
+    elements.currentSourceBadge.style.background = 'rgba(255, 214, 10, 0.15)';
+  }
+}
+
+async function reloadVisiblePhotosAndStart() {
+  await loadLocalDatabasePhotos();
   const lista = getCatalogoFotos();
+  actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
+  indexYearsFromCatalog(lista);
+  rebuildYearFilter();
+
+  if (elements.emptyStateContainer && Array.isArray(userLocalPhotos) && userLocalPhotos.length > 0) {
+    elements.emptyStateContainer.style.display = 'none';
+  }
+
   const { hiddenPhotos, modoFavoritas, favoritas } = store.getState();
   let baseList = lista.filter((item) => !isPhotoHidden(item, hiddenPhotos));
 
@@ -1188,11 +1225,15 @@ function reloadVisiblePhotosAndStart() {
     return;
   }
 
-  activeFotos.sort(() => 0.5 - Math.random());
+  if (!Array.isArray(userLocalPhotos) || userLocalPhotos.length === 0) {
+    activeFotos.sort(() => 0.5 - Math.random());
+  }
   store.setCurrentIndex(0);
   renderSlide();
   startInterval();
 }
+
+const loadActiveGallery = reloadVisiblePhotosAndStart;
 
 function setSlideshowPlaybackState(isPaused) {
   const paused = Boolean(isPaused);
@@ -1553,23 +1594,6 @@ async function storeUploadedPhotosInDB(files) {
     }
   }
 
-  await loadLocalDatabasePhotos();
-  actualizarFuenteUI('local');
-  indexYearsFromCatalog(userLocalPhotos);
-  rebuildYearFilter();
-  const { hiddenPhotos } = store.getState();
-  activeFotos = userLocalPhotos.filter((item) => !isPhotoHidden(item, hiddenPhotos));
-
-  if (elements.emptyStateContainer) {
-    elements.emptyStateContainer.style.display = 'none';
-  }
-
-  if (checkPhotoAvailability(userLocalPhotos.length, activeFotos.length)) {
-    store.setCurrentIndex(0);
-    renderSlide();
-    startInterval();
-  }
-
   showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
 }
 
@@ -1816,9 +1840,23 @@ function initAddMediaAndCollage() {
 
     fileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
-      if (files.length > 0) {
-        await storeUploadedPhotosInDB(files);
-        fileInput.value = '';
+      if (files.length === 0) return;
+
+      // 1. Persistir en IndexedDB
+      await storeUploadedPhotosInDB(files);
+      fileInput.value = '';
+
+      // 2. Refrescar cola reactiva en memoria sin recargar la página
+      if (typeof reloadVisiblePhotosAndStart === 'function') {
+        await reloadVisiblePhotosAndStart();
+      } else if (typeof loadActiveGallery === 'function') {
+        await loadActiveGallery();
+      }
+
+      // 3. Si estaba en estado de cero fotos ocultas, retirar el escudo
+      const zeroStateShield = document.getElementById('hiddenZeroStateShield');
+      if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
+        zeroStateShield.setAttribute('hidden', '');
       }
     });
   }
@@ -2264,6 +2302,8 @@ async function bootstrap() {
   window.setSlideshowPlaybackState = setSlideshowPlaybackState;
   window.checkPhotoAvailability = checkPhotoAvailability;
   window.reloadVisiblePhotosAndStart = reloadVisiblePhotosAndStart;
+  window.loadActiveGallery = loadActiveGallery;
+  window.storeUploadedPhotosInDB = storeUploadedPhotosInDB;
   setSlideshowPlaybackState(store.getState().isPaused);
 
   window.closeSettings = closeSettings;
@@ -2326,45 +2366,31 @@ async function bootstrap() {
   };
 
   // Listener para cuando el usuario selecciona fotos de su dispositivo local
-  if (elements.localPhotoInput) {
+  if (elements.localPhotoInput && elements.localPhotoInput !== elements.localMediaInput) {
     elements.localPhotoInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
-      for (const file of files) {
-        try {
-          await FenixDB.addPhoto(file, file.name);
-        } catch (dbErr) {
-          console.warn('[FenixDB] Error guardando foto:', dbErr);
-        }
+      await storeUploadedPhotosInDB(files);
+      elements.localPhotoInput.value = '';
+
+      if (typeof reloadVisiblePhotosAndStart === 'function') {
+        await reloadVisiblePhotosAndStart();
+      } else if (typeof loadActiveGallery === 'function') {
+        await loadActiveGallery();
       }
 
-      await loadLocalDatabasePhotos();
-      actualizarFuenteUI('local');
-      indexYearsFromCatalog(userLocalPhotos);
-      rebuildYearFilter();
-      const { hiddenPhotos } = store.getState();
-      activeFotos = userLocalPhotos.filter((item) => !isPhotoHidden(item, hiddenPhotos));
-
-      if (elements.emptyStateContainer) {
-        elements.emptyStateContainer.style.display = 'none';
-      }
-
-      // Replicar fotos si seleccionó menos de 4 para poder componer la cuadrícula 2x2
-      const pool = [...userLocalPhotos];
-      while (pool.length < 4) {
-        pool.push(userLocalPhotos[pool.length % userLocalPhotos.length]);
-      }
-
-      if (checkPhotoAvailability(userLocalPhotos.length, activeFotos.length)) {
-        // Reiniciar índice en la nueva foto del usuario
-        store.setCurrentIndex(0);
-        renderSlide();
-        startInterval();
+      const zeroStateShield = document.getElementById('hiddenZeroStateShield');
+      if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
+        zeroStateShield.setAttribute('hidden', '');
       }
 
       // Ensamblar inmediatamente el collage 2x2 con sus fotos locales si estaba en flujo collage
       if (elements.photoPermissionModal && elements.photoPermissionModal.classList.contains('active')) {
+        const pool = [...userLocalPhotos];
+        while (pool.length > 0 && pool.length < 4) {
+          pool.push(userLocalPhotos[pool.length % userLocalPhotos.length]);
+        }
         window.closePhotoPermissionModal();
         await ejecutarEnsambladoCollage(pool);
       }
@@ -2381,6 +2407,9 @@ async function bootstrap() {
   window.changeAppLanguage = (lang) => {
     i18n.setLanguage(lang);
     updateClockAndStatus();
+    if (currentTemperatureC === null && !getSavedManualLocation()) {
+      setWeatherCTAState();
+    }
     i18n.translateDOM();
     rebuildYearFilter();
     actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
@@ -2536,26 +2565,6 @@ async function bootstrap() {
     nextPhoto();
   };
 
-  function actualizarFuenteUI(tipo) {
-    if (!elements.currentSourceBadge) return;
-    if (tipo === 'cloud' && cloudConnector.isConnected()) {
-      elements.currentSourceBadge.setAttribute('data-i18n', 'settings.sourceCloud');
-      elements.currentSourceBadge.innerText = i18n.t('settings.sourceCloud') || 'Nube Personal';
-      elements.currentSourceBadge.style.color = '#32ade6';
-      elements.currentSourceBadge.style.background = 'rgba(50, 173, 230, 0.18)';
-    } else if (Array.isArray(userLocalPhotos) && userLocalPhotos.length > 0) {
-      elements.currentSourceBadge.setAttribute('data-i18n', 'settings.sourceLocal');
-      elements.currentSourceBadge.innerText = i18n.t('settings.sourceLocal') || 'Carrete / Local';
-      elements.currentSourceBadge.style.color = '#ffd60a';
-      elements.currentSourceBadge.style.background = 'rgba(255, 214, 10, 0.15)';
-    } else {
-      elements.currentSourceBadge.setAttribute('data-i18n', 'settings.sourceDemo');
-      elements.currentSourceBadge.innerText = i18n.t('settings.sourceDemo') || 'Galería Demo';
-      elements.currentSourceBadge.style.color = '#ffd60a';
-      elements.currentSourceBadge.style.background = 'rgba(255, 214, 10, 0.15)';
-    }
-  }
-
   // Gestión de Licencia (Pro / Lifetime)
   window.openLicenseModal = () => {
     actualizarLicenciaUI();
@@ -2693,6 +2702,9 @@ async function bootstrap() {
   i18n.translateDOM();
   i18n.onLanguageChange(() => {
     updateClockAndStatus();
+    if (currentTemperatureC === null && !getSavedManualLocation()) {
+      setWeatherCTAState();
+    }
     actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
     actualizarLicenciaUI();
     i18n.translateDOM();
