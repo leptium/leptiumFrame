@@ -4,7 +4,7 @@ import { store } from './core/state/store.js';
 import { weatherService } from './core/weather/weatherService.js';
 import { BurnInShield } from './core/burnin/burnInShield.js';
 import { CollageEngine, getCollagePhotoSet } from './core/collage/collageEngine.js';
-import { i18n, I18N_MASTER } from './core/i18n/index.js';
+import { i18n, I18N_MASTER, I18N_DICTIONARY, getTranslation, formatLocalDate } from './core/i18n/index.js';
 import { sponsorEngine } from './core/ads/sponsorEngine.js';
 import { getUnsplashPhotoBlobs } from './core/collage/unsplashPhotos.js';
 import { cloudConnector } from './core/cloud/cloudConnector.js';
@@ -15,11 +15,14 @@ import { FenixDB } from './core/storage/db.js';
 import { getCheckoutUrl } from './core/config/payments.js';
 import { DEMO_CATALOG } from './core/catalog/demoCatalog.js';
 
-export { DEMO_CATALOG, getCollagePhotoSet, I18N_MASTER };
+export { DEMO_CATALOG, getCollagePhotoSet, I18N_MASTER, I18N_DICTIONARY, getTranslation, formatLocalDate };
 if (typeof window !== 'undefined') {
   window.DEMO_CATALOG = DEMO_CATALOG;
   window.getCollagePhotoSet = getCollagePhotoSet;
   window.I18N_MASTER = I18N_MASTER;
+  window.I18N_DICTIONARY = I18N_DICTIONARY;
+  window.getTranslation = getTranslation;
+  window.formatLocalDate = formatLocalDate;
 }
 
 // Activar WakeLock para mantener pantalla encendida 24/7 con fallback de video canvas invisible
@@ -86,10 +89,13 @@ function initDOMReferences() {
   elements.wrapper = document.getElementById('wrapper');
   elements.img = document.getElementById('displayImg');
   elements.overlay = document.getElementById('overlay');
-  elements.clock = document.getElementById('clock');
-  elements.currentDate = document.getElementById('currentDate');
+  elements.ambientHeader = document.getElementById('ambientHeader');
+  elements.ambientWidget = document.getElementById('ambientWidget');
+  elements.clock = document.getElementById('currentTimeText') || document.getElementById('clock');
+  elements.currentDate = document.getElementById('currentDateText') || document.getElementById('currentDate');
   elements.weatherWidget = document.getElementById('weatherWidget');
-  elements.weatherConditionIcon = document.getElementById('weatherConditionIcon');
+  elements.weatherIcon = document.getElementById('weatherIcon') || document.getElementById('weatherConditionIcon');
+  elements.weatherConditionIcon = elements.weatherIcon;
   elements.weatherTemp = document.getElementById('weatherTemp');
   elements.weatherCity = document.getElementById('weatherCity');
   elements.manualLocationModal = document.getElementById('manualLocationModal');
@@ -103,13 +109,16 @@ function initDOMReferences() {
   elements.btnUnitF = document.getElementById('btnUnitF');
   elements.deviceLocation = document.getElementById('deviceLocation');
   elements.weatherBox = document.getElementById('weatherBox');
-  elements.greeting = document.getElementById('greeting');
+  elements.greetingText = document.getElementById('greetingText') || document.getElementById('greeting');
+  elements.greeting = elements.greetingText;
   elements.greetingIcon = document.getElementById('greetingIcon');
   elements.topLeftContainer = document.getElementById('topLeftContainer');
   elements.btnBackHome = document.getElementById('btnBackHome');
   elements.topLeftPanel = document.getElementById('topLeftPanel');
-  elements.topRightPanel = document.getElementById('topRightPanel');
+  elements.topRightPanel = document.getElementById('topRightPanel') || elements.ambientHeader;
   elements.pauseBadge = document.getElementById('pauseBadge');
+  elements.btnHome = document.getElementById('btnHome');
+  elements.btnFullscreen = document.getElementById('btnFullscreen') || document.getElementById('btn-manual-install');
   elements.btnPlayPause = document.getElementById('btnPlayPause');
   elements.iconPause = document.getElementById('icon-pause');
   elements.iconPlay = document.getElementById('icon-play');
@@ -119,9 +128,12 @@ function initDOMReferences() {
   elements.btnAddMedia = document.getElementById('btnAddMedia');
   elements.localMediaInput = document.getElementById('localMediaInput');
   elements.btnHidePhoto = document.getElementById('btnHidePhoto');
-  elements.btnHeart = document.getElementById('btnHeart');
+  elements.btnFavorite = document.getElementById('btnFavorite') || document.getElementById('btnHeart');
+  elements.btnHeart = elements.btnFavorite;
   elements.btnFavFilter = document.getElementById('btnFavFilter');
-  elements.btnSaveCurrent = document.getElementById('btnSaveCurrent');
+  elements.btnDownload = document.getElementById('btnDownload') || document.getElementById('btnSaveCurrent');
+  elements.btnSaveCurrent = elements.btnDownload;
+  elements.btnSettings = document.getElementById('btnSettings');
   elements.progressBar = document.getElementById('progressBar');
   elements.loader = document.getElementById('loader');
   elements.settingsModal = document.getElementById('settingsModal');
@@ -166,7 +178,7 @@ function initDOMReferences() {
   elements.btnEmptyAddPhotos = document.getElementById('btnEmptyAddPhotos');
   elements.hiddenZeroStateShield = document.getElementById('hiddenZeroStateShield');
   elements.btnResetHiddenPhotos = document.getElementById('btnResetHiddenPhotos');
-  elements.btnManualInstall = document.getElementById('btn-manual-install');
+  elements.btnManualInstall = elements.btnFullscreen;
   elements.btnInstallSettings = document.getElementById('btn-install-settings');
   elements.chkFillScreen = document.getElementById('chkFillScreen');
   elements.iconFsExpand = document.getElementById('icon-fullscreen-expand');
@@ -427,51 +439,91 @@ function getCatalogoFotos() {
 // --------------------------------------------------------------------------
 // Reloj, Saludo y Clima
 // --------------------------------------------------------------------------
-function updateClockAndStatus() {
+function updateClockAndGreeting() {
   const now = new Date();
   const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const hDisplay = hours % 12 || 12;
-  const mDisplay = minutes < 10 ? '0' + minutes : minutes;
 
-  if (elements.clock) {
-    elements.clock.innerText = `${hDisplay}:${mDisplay} ${ampm}`;
+  // 1. Determinar saludo e icono SVG según la hora
+  let greetingKey = 'greeting_night';
+  let iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+
+  if (hours >= 5 && hours < 12) {
+    greetingKey = 'greeting_morning';
+    iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path></svg>`;
+  } else if (hours >= 12 && hours < 19) {
+    greetingKey = 'greeting_afternoon';
+    iconSvg = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg>`;
   }
 
-  if (elements.currentDate) {
-    const lang = i18n.getLanguage() || 'es';
-    try {
-      const dateFormatted = now.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'short' });
-      const capitalized = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
-      elements.currentDate.innerHTML = `${icons.calendar} ${capitalized}`;
-    } catch (e) {
-      const dia = diasSemana[now.getDay()];
-      const numDia = now.getDate();
-      const mes = mesesCortos[now.getMonth()];
-      elements.currentDate.innerHTML = `${icons.calendar} ${dia}, ${numDia} ${mes}`;
-    }
+  const greetingEl = document.getElementById('greetingText') || elements.greeting;
+  const greetingIconEl = document.getElementById('greetingIcon') || elements.greetingIcon;
+  if (greetingEl) {
+    greetingEl.setAttribute('data-i18n', greetingKey);
+    greetingEl.textContent = getTranslation(greetingKey);
+  }
+  if (greetingIconEl) {
+    greetingIconEl.innerHTML = iconSvg;
   }
 
-  if (elements.greeting && elements.greetingIcon) {
-    if (hours >= 5 && hours < 12) {
-      elements.greeting.innerText = i18n.t('app.greetings.morning');
-      elements.greetingIcon.innerHTML = icons.sunrise;
-    } else if (hours >= 12 && hours < 19) {
-      elements.greeting.innerText = i18n.t('app.greetings.afternoon');
-      elements.greetingIcon.innerHTML = icons.sun;
-    } else {
-      elements.greeting.innerText = i18n.t('app.greetings.evening');
-      elements.greetingIcon.innerHTML = icons.moon;
-    }
+  // 2. Formatear Fecha en el idioma activo
+  const dateEl = document.getElementById('currentDateText') || elements.currentDate;
+  if (dateEl) {
+    dateEl.textContent = formatLocalDate(now);
+  }
+
+  // 3. Formatear Hora
+  const timeEl = document.getElementById('currentTimeText') || elements.clock;
+  if (timeEl) {
+    const lang = (typeof localStorage !== 'undefined' && localStorage.getItem('leptium_language')) || i18n.getLanguage() || 'es';
+    timeEl.textContent = now.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   const { autoDim } = store.getState();
-  if (autoDim && (hours >= 22 || hours < 7)) {
-    elements.wrapper.classList.add('night-dim');
-  } else {
-    elements.wrapper.classList.remove('night-dim');
+  if (elements.wrapper) {
+    if (autoDim && (hours >= 22 || hours < 7)) {
+      elements.wrapper.classList.add('night-dim');
+    } else {
+      elements.wrapper.classList.remove('night-dim');
+    }
   }
+}
+
+const updateClockAndStatus = updateClockAndGreeting;
+
+function applyLanguageToUI() {
+  // Textos directos
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (key) el.textContent = getTranslation(key);
+  });
+
+  // Placeholders de inputs
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (key) el.setAttribute('placeholder', getTranslation(key));
+  });
+
+  // Tooltips de la barra de herramientas
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title');
+    if (key) {
+      const text = getTranslation(key);
+      el.setAttribute('title', text);
+      el.setAttribute('aria-label', text);
+    }
+  });
+
+  // Refrescar saludo y fecha al instante si el usuario cambia de idioma
+  updateClockAndGreeting();
+  updateCollageSelectionUI();
+}
+
+if (typeof window !== 'undefined') {
+  window.updateClockAndGreeting = updateClockAndGreeting;
+  window.applyLanguageToUI = applyLanguageToUI;
 }
 
 const STORAGE_KEY_LOCATION = 'leptium_manual_location';
@@ -482,6 +534,10 @@ let currentTemperatureC = null;
 let currentUnit = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY_UNITS)) || 'fahrenheit';
 
 function getUserLanguageCode() {
+  const savedLang = typeof localStorage !== 'undefined' ? localStorage.getItem('leptium_language') : null;
+  if (savedLang && ['es', 'en', 'fr'].includes(savedLang)) {
+    return savedLang;
+  }
   if (typeof i18n?.getLanguage === 'function') {
     const appLang = i18n.getLanguage();
     if (appLang) return String(appLang).split('-')[0].toLowerCase();
@@ -493,20 +549,20 @@ function getUserLanguageCode() {
 function getWeatherConditionSvg(weatherCode, isDay = 1) {
   if (weatherCode === 0 || weatherCode === 1) {
     if (isDay === 0) {
-      return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+      return '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
     }
-    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+    return '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
   }
   if ((weatherCode >= 51 && weatherCode <= 67) || (weatherCode >= 80 && weatherCode <= 82)) {
-    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>';
+    return '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M16 14v6"></path><path d="M8 14v6"></path><path d="M12 16v6"></path></svg>';
   }
   if ((weatherCode >= 71 && weatherCode <= 77) || (weatherCode >= 85 && weatherCode <= 86)) {
-    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M8 15h.01"></path><path d="M8 19h.01"></path><path d="M12 17h.01"></path><path d="M12 21h.01"></path><path d="M16 15h.01"></path><path d="M16 19h.01"></path></svg>';
+    return '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M8 15h.01"></path><path d="M8 19h.01"></path><path d="M12 17h.01"></path><path d="M12 21h.01"></path><path d="M16 15h.01"></path><path d="M16 19h.01"></path></svg>';
   }
   if (weatherCode >= 95) {
-    return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"></path><path d="m13 12-3 5h4l-3 5"></path></svg>';
+    return '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"></path><path d="m13 12-3 5h4l-3 5"></path></svg>';
   }
-  return '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>';
+  return '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>';
 }
 
 function getSavedManualLocation() {
@@ -595,7 +651,7 @@ function setWeatherCTAState() {
   const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
   const weatherTemp = elements.weatherTemp || document.getElementById('weatherTemp');
   const weatherCity = elements.weatherCity || document.getElementById('weatherCity');
-  const conditionIcon = elements.weatherConditionIcon || document.getElementById('weatherConditionIcon');
+  const conditionIcon = elements.weatherIcon || elements.weatherConditionIcon || document.getElementById('weatherIcon') || document.getElementById('weatherConditionIcon');
 
   currentTemperatureC = null;
 
@@ -607,11 +663,11 @@ function setWeatherCTAState() {
     weatherTemp.textContent = '--°';
   }
   if (weatherCity) {
-    weatherCity.setAttribute('data-i18n', 'weather_cta_tap');
-    weatherCity.textContent = i18n.t('weather_cta_tap') || 'Toca para fijar tu ciudad';
+    weatherCity.setAttribute('data-i18n', 'weather_tap_set');
+    weatherCity.textContent = getTranslation('weather_tap_set') || 'Toca para fijar tu ciudad';
   }
   if (conditionIcon) {
-    conditionIcon.innerHTML = getWeatherConditionSvg(2, 1);
+    conditionIcon.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="1.75"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
   }
 }
 
@@ -621,7 +677,7 @@ function updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay
   const weatherWidget = elements.weatherWidget || document.getElementById('weatherWidget');
   const weatherTemp = elements.weatherTemp || document.getElementById('weatherTemp');
   const weatherCity = elements.weatherCity || document.getElementById('weatherCity');
-  const conditionIcon = elements.weatherConditionIcon || document.getElementById('weatherConditionIcon');
+  const conditionIcon = elements.weatherIcon || elements.weatherConditionIcon || document.getElementById('weatherIcon') || document.getElementById('weatherConditionIcon');
 
   if (!locationStr && typeof tempC !== 'number' && (!tempStr || tempStr === '--°')) {
     setWeatherCTAState();
@@ -1238,6 +1294,7 @@ const loadActiveGallery = reloadVisiblePhotosAndStart;
 function setSlideshowPlaybackState(isPaused) {
   const paused = Boolean(isPaused);
   const toolbar = elements.actionToolbar || document.getElementById('actionToolbar');
+  const btnPlayPause = elements.btnPlayPause || document.getElementById('btnPlayPause');
 
   if (paused) {
     document.body.classList.add('canvas-paused');
@@ -1245,6 +1302,14 @@ function setSlideshowPlaybackState(isPaused) {
   } else {
     document.body.classList.remove('canvas-paused');
     if (toolbar) toolbar.classList.remove('is-paused');
+  }
+
+  if (btnPlayPause) {
+    const titleKey = paused ? 'toolbar_play' : 'toolbar_pause';
+    const titleText = getTranslation(titleKey);
+    btnPlayPause.setAttribute('data-i18n-title', titleKey);
+    btnPlayPause.setAttribute('title', titleText);
+    btnPlayPause.setAttribute('aria-label', titleText);
   }
 
   if (elements.iconPause && elements.iconPlay) {
@@ -1276,10 +1341,12 @@ function togglePause(e) {
 // Favoritos y Filtros
 // --------------------------------------------------------------------------
 function actualizarIconoFavorita(ruta) {
+  const btn = elements.btnFavorite || elements.btnHeart || document.getElementById('btnFavorite') || document.getElementById('btnHeart');
+  if (!btn) return;
   if (store.isFavorita(ruta)) {
-    elements.btnHeart.classList.add('active');
+    btn.classList.add('active');
   } else {
-    elements.btnHeart.classList.remove('active');
+    btn.classList.remove('active');
   }
 }
 
@@ -1325,11 +1392,11 @@ function toggleModoFavoritas(e) {
       return;
     }
     store.setModoFavoritas(true);
-    elements.btnFavFilter.classList.add('active');
+    if (elements.btnFavFilter) elements.btnFavFilter.classList.add('active');
     activeFotos = favs.slice(0);
   } else {
     store.setModoFavoritas(false);
-    elements.btnFavFilter.classList.remove('active');
+    if (elements.btnFavFilter) elements.btnFavFilter.classList.remove('active');
     activeFotos = lista.filter((p) => !isPhotoHidden(p, hiddenPhotos));
   }
 
@@ -1527,7 +1594,7 @@ async function downloadCurrentImage(e) {
     if (typeof e.preventDefault === 'function') e.preventDefault();
   }
 
-  elements.overlay.classList.remove('paused-hidden');
+  if (elements.overlay) elements.overlay.classList.remove('paused-hidden');
   setOverlayMetaLines([{ icon: icons.camera, text: i18n.t('app.savingDevice') || 'Guardando en dispositivo...' }]);
 
   try {
@@ -1564,15 +1631,17 @@ async function downloadCurrentImage(e) {
     setTimeout(() => URL.revokeObjectURL(tempUrl), 1000);
 
     setOverlayMetaLines([{ icon: icons.successCheck, text: i18n.t('app.saved') || 'Guardada con éxito' }]);
+    showHudToast(i18n.t('app.saved') || 'Guardada con éxito', 'success');
   } catch (error) {
     console.error('Error al descargar fotografia:', error);
     setOverlayMetaLines([{ icon: icons.warning, text: error.message || 'No se pudo guardar' }]);
+    showHudToast(error.message || 'No se pudo guardar', 'error');
   }
 
   setTimeout(() => {
     const { isPaused } = store.getState();
     if (isPaused) {
-      elements.overlay.classList.add('paused-hidden');
+      if (elements.overlay) elements.overlay.classList.add('paused-hidden');
     } else {
       renderSlide();
     }
@@ -1693,14 +1762,15 @@ function toggleCollageSelection(photo, element) {
 function updateCollageSelectionUI() {
   const counter = elements.collageSelectionCounter || document.getElementById('collageSelectionCounter');
   const btnRender = elements.btnRenderCustomCollage || document.getElementById('btnRenderCustomCollage');
-  if (counter) counter.textContent = `Seleccionadas: ${selectedCollagePhotos.length} / 4`;
+  const selectedLabel = getTranslation('collage_selected_count') || 'Seleccionadas';
+  if (counter) counter.textContent = `${selectedLabel}: ${selectedCollagePhotos.length} / 4`;
   if (btnRender) btnRender.disabled = selectedCollagePhotos.length !== 4;
 }
 
 async function renderCollageFromBlobs(photos) {
   if (!Array.isArray(photos) || photos.length === 0) return;
 
-  elements.overlay.classList.remove('paused-hidden');
+  if (elements.overlay) elements.overlay.classList.remove('paused-hidden');
   setOverlayMetaLines([{ icon: icons.wand, text: i18n.t('collage.assembling') || 'Generando collage...' }]);
 
   const tempBlobUrls = [];
@@ -1735,8 +1805,11 @@ async function renderCollageFromBlobs(photos) {
     }
     await exportCollageCanvas(elements.collageCanvas);
     const { isPaused } = store.getState();
-    if (isPaused) elements.overlay.classList.add('paused-hidden');
-    else renderSlide();
+    if (isPaused) {
+      if (elements.overlay) elements.overlay.classList.add('paused-hidden');
+    } else {
+      renderSlide();
+    }
   } catch (err) {
     console.error('Error generando collage:', err);
     setOverlayMetaLines([{ icon: icons.warning, text: i18n.t('app.errors.collageFailed') || 'Error al generar collage' }]);
@@ -1768,7 +1841,7 @@ async function generarCollage(e) {
 }
 
 async function ejecutarEnsambladoCollage(fotosDisponibles) {
-  elements.overlay.classList.remove('paused-hidden');
+  if (elements.overlay) elements.overlay.classList.remove('paused-hidden');
   setOverlayMetaLines([{ icon: icons.wand, text: i18n.t('collage.assembling') || 'Generando collage...' }]);
 
   const { currentIndex, hiddenPhotos } = store.getState();
@@ -1797,8 +1870,11 @@ async function ejecutarEnsambladoCollage(fotosDisponibles) {
     }
     await exportCollageCanvas(elements.collageCanvas);
     const { isPaused } = store.getState();
-    if (isPaused) elements.overlay.classList.add('paused-hidden');
-    else renderSlide();
+    if (isPaused) {
+      if (elements.overlay) elements.overlay.classList.add('paused-hidden');
+    } else {
+      renderSlide();
+    }
   } catch (err) {
     console.error('Error generando collage:', err);
     setOverlayMetaLines([{ icon: icons.warning, text: i18n.t('app.errors.collageFailed') }]);
@@ -2054,8 +2130,7 @@ async function bootstrap() {
   applyFillScreenClass(fillScreen !== false);
 
   // Registrar elementos estáticos en el escudo anti-quemado de pantalla
-  burnInShield.register(elements.topLeftContainer || elements.topLeftPanel);
-  burnInShield.register(elements.topRightPanel);
+  burnInShield.register(elements.ambientHeader || elements.ambientWidget || elements.topRightPanel);
   burnInShield.register(elements.actionToolbar);
   burnInShield.start();
 
@@ -2080,9 +2155,9 @@ async function bootstrap() {
     }
   });
 
-  // Iniciar reloj y estado cada segundo
-  setInterval(updateClockAndStatus, 1000);
-  updateClockAndStatus();
+  // Iniciar reloj, saludo y fecha cada segundo
+  setInterval(updateClockAndGreeting, 1000);
+  updateClockAndGreeting();
 
   // Cargar catálogo de fotos (IndexedDB FenixDB, Nube Personal Directa o Demo)
   let lista = getCatalogoFotos();
@@ -2145,7 +2220,7 @@ async function bootstrap() {
   if (elements.wrapper) {
     elements.wrapper.addEventListener('touchstart', (e) => {
       // Ignorar si el toque se originó en controles interactivos, barras o botones
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
       touchStartX = e.changedTouches[0].screenX;
@@ -2154,7 +2229,7 @@ async function bootstrap() {
 
     elements.wrapper.addEventListener('touchend', (e) => {
       // Ignorar si el toque finalizó sobre controles interactivos para no activar el toque por zonas de la foto
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2194,7 +2269,7 @@ async function bootstrap() {
       if (Date.now() - lastTouchTimestamp < 600) return;
 
       // Evitar que el clic en botones, modales o toolbars cambie la foto
-      if (e.target.closest('#actionToolbar, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2217,8 +2292,8 @@ async function bootstrap() {
       }
     });
 
-    // Detener propagación de toques en las barras de herramientas
-    ['actionToolbar', 'hiddenZeroStateShield', 'topLeftContainer', 'topRightPanel', 'btnMoreInfoWrapper'].forEach((id) => {
+    // Detener propagación de toques en las barras de herramientas y widget ambiental
+    ['actionToolbar', 'ambientHeader', 'ambientWidget', 'hiddenZeroStateShield', 'topLeftContainer', 'topRightPanel', 'btnMoreInfoWrapper'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
@@ -2287,7 +2362,7 @@ async function bootstrap() {
   };
 
   // Enlazar listeners directos de toque y clic en todos los botones de retorno al home
-  document.querySelectorAll('.btn-home, #btnBackHome').forEach((btn) => {
+  document.querySelectorAll('#btnHome, .btn-home, #btnBackHome').forEach((btn) => {
     btn.addEventListener('click', window.navigateHome);
     btn.addEventListener('touchend', (e) => {
       if (typeof e.preventDefault === 'function') e.preventDefault();
@@ -2337,7 +2412,7 @@ async function bootstrap() {
   };
   window.generateRandomUnsplashCollage = async () => {
     window.closePhotoPermissionModal();
-    elements.overlay.classList.remove('paused-hidden');
+    if (elements.overlay) elements.overlay.classList.remove('paused-hidden');
     setOverlayMetaLines([{ icon: '', text: i18n.t('collage.downloadingUnsplash') || 'Descargando fotos de Unsplash...' }]);
 
     try {
@@ -2359,8 +2434,11 @@ async function bootstrap() {
       setOverlayMetaLines([{ icon: icons.warning, text: i18n.t('app.errors.unsplashFailed') }]);
       setTimeout(() => {
         const { isPaused } = store.getState();
-        if (isPaused) elements.overlay.classList.add('paused-hidden');
-        else renderSlide();
+        if (isPaused) {
+          if (elements.overlay) elements.overlay.classList.add('paused-hidden');
+        } else {
+          renderSlide();
+        }
       }, 2500);
     }
   };
@@ -2406,11 +2484,12 @@ async function bootstrap() {
 
   window.changeAppLanguage = (lang) => {
     i18n.setLanguage(lang);
-    updateClockAndStatus();
+    applyLanguageToUI();
     if (currentTemperatureC === null && !getSavedManualLocation()) {
       setWeatherCTAState();
     }
     i18n.translateDOM();
+    setSlideshowPlaybackState(store.getState().isPaused);
     rebuildYearFilter();
     actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
     if (elements.infoDetailModal && elements.infoDetailModal.style.display === 'block') {
@@ -2423,7 +2502,7 @@ async function bootstrap() {
   };
   window.saveSettings = () => {
     store.setAutoDim(elements.chkAutoDim.checked);
-    updateClockAndStatus();
+    updateClockAndGreeting();
   };
   window.toggleFrame = () => {
     const frameOn = elements.chkFrame.checked;
@@ -2699,15 +2778,18 @@ async function bootstrap() {
 
   // Inicializar i18n y estado de licencia en el marco digital
   actualizarLicenciaUI();
+  applyLanguageToUI();
   i18n.translateDOM();
+  setSlideshowPlaybackState(store.getState().isPaused);
   i18n.onLanguageChange(() => {
-    updateClockAndStatus();
+    applyLanguageToUI();
     if (currentTemperatureC === null && !getSavedManualLocation()) {
       setWeatherCTAState();
     }
     actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
     actualizarLicenciaUI();
     i18n.translateDOM();
+    setSlideshowPlaybackState(store.getState().isPaused);
   });
 
   // Marcar botón de idioma inicial en ajustes

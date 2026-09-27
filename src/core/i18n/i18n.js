@@ -6,6 +6,41 @@ const STORAGE_KEY = 'leptium_language';
 const SUPPORTED_LANGS = ['es', 'en', 'fr'];
 const TRANSLATIONS = { es, en, fr };
 export const I18N_MASTER = TRANSLATIONS;
+export const I18N_DICTIONARY = TRANSLATIONS;
+
+export function getTranslation(key) {
+  let lang = 'es';
+  try {
+    lang = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || i18n.getLanguage() || 'es';
+  } catch (_) {
+    lang = i18n.getLanguage() || 'es';
+  }
+  if (I18N_DICTIONARY[lang] && I18N_DICTIONARY[lang][key] !== undefined) {
+    return I18N_DICTIONARY[lang][key];
+  }
+  const viaEngine = i18n.t(key);
+  if (viaEngine && viaEngine !== key) {
+    return viaEngine;
+  }
+  return I18N_DICTIONARY.es[key] || key;
+}
+
+export function formatLocalDate(dateObj) {
+  let lang = 'es';
+  try {
+    lang = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || i18n.getLanguage() || 'es';
+  } catch (_) {
+    lang = i18n.getLanguage() || 'es';
+  }
+  const localeMap = { es: 'es-ES', en: 'en-US', fr: 'fr-FR' };
+  const targetLocale = localeMap[lang] || 'es-ES';
+
+  return new Intl.DateTimeFormat(targetLocale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short'
+  }).format(dateObj);
+}
 
 export class I18nEngine {
   constructor() {
@@ -100,6 +135,19 @@ export class I18nEngine {
         const translated = this.t(key);
         if (typeof translated === 'string') {
           el.innerHTML = translated;
+        }
+      }
+    });
+
+    // Traducir títulos y aria-label (data-i18n-title)
+    const titleElements = root.querySelectorAll('[data-i18n-title]');
+    titleElements.forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      if (key) {
+        const translated = this.t(key.trim());
+        if (typeof translated === 'string') {
+          el.setAttribute('title', translated);
+          el.setAttribute('aria-label', translated);
         }
       }
     });

@@ -4,6 +4,10 @@
  * geocodificación internacional multi-idioma con Open-Meteo sin API key.
  */
 export function getUserLanguageCode() {
+  try {
+    const savedLang = typeof localStorage !== 'undefined' && localStorage.getItem('leptium_language');
+    if (savedLang) return String(savedLang).split('-')[0].toLowerCase();
+  } catch (_) {}
   const lang = (typeof navigator !== 'undefined' && (navigator.language || navigator.userLanguage)) || 'es';
   return String(lang).split('-')[0].toLowerCase() || 'es';
 }
