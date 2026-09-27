@@ -155,10 +155,17 @@ function initDOMReferences() {
   elements.collageModal = document.getElementById('collageModal');
   elements.btnCloseCollageModal = document.getElementById('btnCloseCollageModal');
   elements.btnAutoCollage = document.getElementById('btnAutoCollage');
-  elements.btnRenderCustomCollage = document.getElementById('btnRenderCustomCollage');
-  elements.collageSelectionCounter = document.getElementById('collageSelectionCounter');
+  elements.btnGenerateCollage = document.getElementById('btnGenerateCollage') || document.getElementById('btnRenderCustomCollage');
+  elements.btnRenderCustomCollage = elements.btnGenerateCollage;
+  elements.collageCounterText = document.getElementById('collageCounterText') || document.getElementById('collageSelectionCounter');
+  elements.collageSelectionCounter = elements.collageCounterText;
   elements.collagePickerGrid = document.getElementById('collagePickerGrid');
   elements.collagePreview = document.getElementById('collagePreview');
+  elements.collagePreviewModal = document.getElementById('collagePreviewModal');
+  elements.collagePreviewImg = document.getElementById('collagePreviewImg');
+  elements.btnClosePreview = document.getElementById('btnClosePreview');
+  elements.btnBackToEditCollage = document.getElementById('btnBackToEditCollage');
+  elements.btnSaveCollageFinal = document.getElementById('btnSaveCollageFinal');
   elements.actionToolbar = document.getElementById('actionToolbar');
   elements.collageCanvas = document.getElementById('collageCanvas');
   elements.sponsorModal = document.getElementById('sponsorModal');
@@ -1950,15 +1957,58 @@ function toggleCollageSelection(photo, element) {
     badge.textContent = String(selectedCollagePhotos.length);
     element.appendChild(badge);
   }
-  updateCollageSelectionUI();
+  updateSelectedCounter(selectedCollagePhotos);
+}
+
+// Función para refrescar el conteo de selección
+function updateSelectedCounter(selectedArray = selectedCollagePhotos) {
+  const arr = Array.isArray(selectedArray) ? selectedArray : selectedCollagePhotos;
+  const counterEl = document.getElementById('collageCounterText') || document.getElementById('collageSelectionCounter') || elements.collageCounterText;
+  if (counterEl) {
+    const count = arr.length;
+    const template = getTranslation('collage_selected_count') || 'Seleccionadas: {count} de 4';
+    counterEl.textContent = template.replace('{count}', count);
+  }
+
+  const btnGenerate = document.getElementById('btnGenerateCollage') || document.getElementById('btnRenderCustomCollage') || elements.btnGenerateCollage;
+  if (btnGenerate) {
+    btnGenerate.disabled = arr.length !== 4;
+  }
 }
 
 function updateCollageSelectionUI() {
-  const counter = elements.collageSelectionCounter || document.getElementById('collageSelectionCounter');
-  const btnRender = elements.btnRenderCustomCollage || document.getElementById('btnRenderCustomCollage');
-  const selectedLabel = getTranslation('collage_selected_count') || 'Seleccionadas';
-  if (counter) counter.textContent = `${selectedLabel}: ${selectedCollagePhotos.length} / 4`;
-  if (btnRender) btnRender.disabled = selectedCollagePhotos.length !== 4;
+  updateSelectedCounter(selectedCollagePhotos);
+}
+
+function openCollagePreviewModal(dataUrl) {
+  const previewModal = elements.collagePreviewModal || document.getElementById('collagePreviewModal');
+  const previewImg = elements.collagePreviewImg || document.getElementById('collagePreviewImg');
+  if (previewImg && dataUrl) {
+    previewImg.src = dataUrl;
+  }
+  if (elements.collagePreview && dataUrl) {
+    elements.collagePreview.src = dataUrl;
+  }
+  if (previewModal) {
+    previewModal.hidden = false;
+    previewModal.removeAttribute('hidden');
+  }
+}
+
+function closeCollagePreviewModal(e) {
+  if (e && typeof e.stopPropagation === 'function') {
+    e.stopPropagation();
+  }
+  const previewModal = elements.collagePreviewModal || document.getElementById('collagePreviewModal');
+  const previewImg = elements.collagePreviewImg || document.getElementById('collagePreviewImg');
+  if (previewModal) {
+    previewModal.hidden = true;
+    previewModal.setAttribute('hidden', '');
+  }
+  if (previewImg) {
+    previewImg.src = '';
+    previewImg.removeAttribute('src');
+  }
 }
 
 async function renderCollageFromBlobs(photos) {
@@ -1994,10 +2044,7 @@ async function renderCollageFromBlobs(photos) {
       showWatermark,
       currentLang
     );
-    if (elements.collagePreview) {
-      elements.collagePreview.src = collageDataUrl;
-    }
-    await exportCollageCanvas(elements.collageCanvas);
+    openCollagePreviewModal(collageDataUrl);
     const { isPaused } = store.getState();
     if (isPaused) {
       if (elements.overlay) elements.overlay.classList.add('paused-hidden');
@@ -2027,7 +2074,7 @@ async function generarCollage(e) {
 
   const modal = elements.collageModal || document.getElementById('collageModal');
   selectedCollagePhotos = [];
-  updateCollageSelectionUI();
+  updateSelectedCounter(selectedCollagePhotos);
   await populateCollageThumbnailGrid();
   if (modal) {
     modal.hidden = false;
@@ -2059,10 +2106,7 @@ async function ejecutarEnsambladoCollage(fotosDisponibles) {
     const showWatermark = !licenseManager.isPaid();
     const currentLang = typeof i18n.getLanguage === 'function' ? i18n.getLanguage() : 'en';
     collageDataUrl = await collageEngine.generate2x2(seleccion, elements.collageCanvas, watermarkText, qrPromptText, showWatermark, currentLang);
-    if (elements.collagePreview) {
-      elements.collagePreview.src = collageDataUrl;
-    }
-    await exportCollageCanvas(elements.collageCanvas);
+    openCollagePreviewModal(collageDataUrl);
     const { isPaused } = store.getState();
     if (isPaused) {
       if (elements.overlay) elements.overlay.classList.add('paused-hidden');
@@ -2083,6 +2127,7 @@ function cerrarCollageModal(e) {
   if (modal) {
     modal.hidden = true;
   }
+  closeCollagePreviewModal(e);
   if (elements.collagePreview) {
     elements.collagePreview.src = '';
     elements.collagePreview.removeAttribute('src');
@@ -2097,7 +2142,11 @@ function initAddMediaAndCollage() {
   const modal = elements.collageModal || document.getElementById('collageModal');
   const btnClose = elements.btnCloseCollageModal || document.getElementById('btnCloseCollageModal');
   const btnAuto = elements.btnAutoCollage || document.getElementById('btnAutoCollage');
-  const btnRender = elements.btnRenderCustomCollage || document.getElementById('btnRenderCustomCollage');
+  const btnRender = document.getElementById('btnGenerateCollage') || document.getElementById('btnRenderCustomCollage') || elements.btnGenerateCollage;
+  const previewModal = elements.collagePreviewModal || document.getElementById('collagePreviewModal');
+  const btnClosePreview = elements.btnClosePreview || document.getElementById('btnClosePreview');
+  const btnBackToEdit = elements.btnBackToEditCollage || document.getElementById('btnBackToEditCollage');
+  const btnSaveFinal = elements.btnSaveCollageFinal || document.getElementById('btnSaveCollageFinal');
 
   if (btnAdd && fileInput) {
     ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
@@ -2138,7 +2187,7 @@ function initAddMediaAndCollage() {
     btnCollage.addEventListener('click', async (e) => {
       e.stopPropagation();
       selectedCollagePhotos = [];
-      updateCollageSelectionUI();
+      updateSelectedCounter(selectedCollagePhotos);
       await populateCollageThumbnailGrid();
       if (modal) modal.hidden = false;
     });
@@ -2178,6 +2227,47 @@ function initAddMediaAndCollage() {
       if (selectedCollagePhotos.length === 4) {
         if (modal) modal.hidden = true;
         await renderCollageFromBlobs(selectedCollagePhotos);
+      }
+    });
+  }
+
+  if (previewModal) {
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      previewModal.addEventListener(evtName, (e) => {
+        e.stopPropagation();
+        if (evtName === 'click' && e.target === previewModal) {
+          closeCollagePreviewModal(e);
+        }
+      });
+    });
+  }
+
+  if (btnClosePreview) {
+    btnClosePreview.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeCollagePreviewModal(e);
+    });
+  }
+
+  if (btnBackToEdit) {
+    btnBackToEdit.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      closeCollagePreviewModal(e);
+      updateSelectedCounter(selectedCollagePhotos);
+      await populateCollageThumbnailGrid();
+      if (modal) modal.hidden = false;
+    });
+  }
+
+  if (btnSaveFinal) {
+    btnSaveFinal.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btnSaveFinal.disabled = true;
+      try {
+        await exportCollageCanvas(elements.collageCanvas);
+        closeCollagePreviewModal(e);
+      } finally {
+        btnSaveFinal.disabled = false;
       }
     });
   }
@@ -2417,7 +2507,7 @@ async function bootstrap() {
   if (elements.wrapper) {
     elements.wrapper.addEventListener('touchstart', (e) => {
       // Ignorar si el toque se originó en controles interactivos, barras o botones
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
       touchStartX = e.changedTouches[0].screenX;
@@ -2426,7 +2516,7 @@ async function bootstrap() {
 
     elements.wrapper.addEventListener('touchend', (e) => {
       // Ignorar si el toque finalizó sobre controles interactivos para no activar el toque por zonas de la foto
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2436,6 +2526,7 @@ async function bootstrap() {
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
       if (elements.calendarModal && !elements.calendarModal.hidden) return;
       if (elements.collageModal && !elements.collageModal.hidden) return;
+      if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) return;
       if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
         elements.ambientContextMenu.setAttribute('hidden', '');
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
@@ -2472,7 +2563,7 @@ async function bootstrap() {
       if (Date.now() - lastTouchTimestamp < 600) return;
 
       // Evitar que el clic en botones, modales o toolbars cambie la foto
-      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2480,6 +2571,7 @@ async function bootstrap() {
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
       if (elements.calendarModal && !elements.calendarModal.hidden) return;
       if (elements.collageModal && !elements.collageModal.hidden) return;
+      if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) return;
       if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
         elements.ambientContextMenu.setAttribute('hidden', '');
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
@@ -2529,6 +2621,10 @@ async function bootstrap() {
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
         return;
       }
+      if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) {
+        closeCollagePreviewModal(e);
+        return;
+      }
       if (elements.manualLocationModal && !elements.manualLocationModal.hidden) {
         closeManualLocationModal(e);
         return;
@@ -2550,6 +2646,7 @@ async function bootstrap() {
     if (elements.manualLocationModal && !elements.manualLocationModal.hidden) return;
     if (elements.calendarModal && !elements.calendarModal.hidden) return;
     if (elements.collageModal && !elements.collageModal.hidden) return;
+    if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) return;
     if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
     if (e.key === 'ArrowRight') {
@@ -2594,6 +2691,9 @@ async function bootstrap() {
   window.toggleSettings = toggleSettings;
   window.openCalendarModal = openCalendarModal;
   window.closeCalendarModal = closeCalendarModal;
+  window.updateSelectedCounter = updateSelectedCounter;
+  window.openCollagePreviewModal = openCollagePreviewModal;
+  window.closeCollagePreviewModal = closeCollagePreviewModal;
   window.togglePause = togglePause;
   window.setSlideshowPlaybackState = setSlideshowPlaybackState;
   window.checkPhotoAvailability = checkPhotoAvailability;
