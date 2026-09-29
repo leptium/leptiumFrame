@@ -4,7 +4,7 @@ import { store } from './core/state/store.js';
 import { weatherService } from './core/weather/weatherService.js';
 import { BurnInShield } from './core/burnin/burnInShield.js';
 import { CollageEngine, getCollagePhotoSet } from './core/collage/collageEngine.js';
-import { i18n, I18N_MASTER, I18N_DICTIONARY, getTranslation, formatLocalDate } from './core/i18n/index.js';
+import { i18n, I18N_MASTER, I18N_DICTIONARY, getTranslation, t, formatLocalDate } from './core/i18n/index.js';
 import { sponsorEngine } from './core/ads/sponsorEngine.js';
 import { getUnsplashPhotoBlobs } from './core/collage/unsplashPhotos.js';
 import { cloudConnector } from './core/cloud/cloudConnector.js';
@@ -62,6 +62,7 @@ export {
   I18N_MASTER,
   I18N_DICTIONARY,
   getTranslation,
+  t,
   formatLocalDate,
   detectHardwareProfile,
   getDeviceHardwareProfile,
@@ -73,6 +74,7 @@ export {
   getPhotosCountFromDB,
   renderImportProgressBar,
   finalizeImportProgressBar,
+  finalizeImportAndPlay,
   processIncomingFilesWithProfile
 };
 if (typeof window !== 'undefined') {
@@ -81,6 +83,7 @@ if (typeof window !== 'undefined') {
   window.I18N_MASTER = I18N_MASTER;
   window.I18N_DICTIONARY = I18N_DICTIONARY;
   window.getTranslation = getTranslation;
+  window.t = t;
   window.formatLocalDate = formatLocalDate;
   window.detectHardwareProfile = detectHardwareProfile;
   window.getDeviceHardwareProfile = getDeviceHardwareProfile;
@@ -400,7 +403,7 @@ async function getPhotoBlobFromIndexedDB(id) {
 
 async function loadLocalDatabasePhotos() {
   try {
-    const totalCount = await FenixDB.countPhotos().catch(() => 0);
+    const totalCount = await FenixDB.getPhotoCount().catch(() => 0);
     const useLazyMode =
       Boolean(currentHardwareProfile && currentHardwareProfile.lazyBlobResolution) ||
       totalCount > ((currentHardwareProfile && currentHardwareProfile.maxActiveObjectUrls) || 24);
@@ -660,7 +663,12 @@ function applyLanguageToUI() {
   // Textos directos
   document.querySelectorAll('[data-i18n]').forEach((el) => {
     const key = el.getAttribute('data-i18n');
-    if (key) el.textContent = getTranslation(key);
+    if (key) {
+      const text = getTranslation(key);
+      if (typeof text === 'string' && !/\{[a-zA-Z0-9_]+\}/.test(text)) {
+        el.textContent = text;
+      }
+    }
   });
 
   // Placeholders de inputs
@@ -684,6 +692,9 @@ function applyLanguageToUI() {
   updateCollageSelectionUI();
   if (elements.calendarModal && !elements.calendarModal.hidden) {
     renderMonthlyCalendar();
+  }
+  if (elements.importBatchModal && !elements.importBatchModal.hidden && pendingBatchFiles.length > 0) {
+    openImportBatchModal(pendingBatchFiles, pendingBatchMax);
   }
 }
 
@@ -2076,19 +2087,24 @@ let pendingBatchFiles = [];
 let pendingBatchMax = 40;
 
 async function storeSinglePhotoInDB(file) {
-  return await FenixDB.addPhoto(file);
+  const filename = (file && (file.webkitRelativePath || file.name)) || `foto-${Date.now()}.jpg`;
+  return await FenixDB.addPhoto(file, filename);
 }
 
 async function getPhotosCountFromDB() {
-  return await FenixDB.countPhotos().catch(() => 0);
+  return await FenixDB.getPhotoCount().catch(() => 0);
 }
 
 function renderImportProgressBar(current, total) {
   const overlay = elements.importProgressOverlay || document.getElementById('importProgressOverlay');
   const fill = elements.importProgressBarFill || document.getElementById('importProgressBarFill');
   const text = elements.importProgressText || document.getElementById('importProgressText');
-  const tpl = getTranslation('import_streaming_progress') || 'Importando fotos ({current}/{total})...';
-  const msg = tpl.replace('{current}', String(current)).replace('{total}', String(total));
+  const msg = t('import_streaming_progress', {
+    current,
+    imported: current,
+    count: current,
+    total
+  });
 
   if (overlay) {
     overlay.hidden = false;
@@ -2114,12 +2130,67 @@ function finalizeImportProgressBar() {
   }
 }
 
+async function finalizeImportAndPlay() {
+  finalizeImportProgressBar();
+
+  // 1. Recargar el array principal de fotos desde IndexedDB
+  await loadLocalDatabasePhotos();
+  const lista = getCatalogoFotos();
+  actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
+  indexYearsFromCatalog(lista);
+  rebuildYearFilter();
+
+  // 2. Cerrar el modal inicial/bienvenida y modales de importación
+  const welcomeEls = document.querySelectorAll('.welcome-modal, #welcomeModal, #emptyStateContainer, .empty-state-overlay');
+  welcomeEls.forEach((el) => {
+    el.style.display = 'none';
+    el.setAttribute('hidden', '');
+  });
+  if (elements.emptyStateContainer) {
+    elements.emptyStateContainer.style.display = 'none';
+  }
+  closeImportMediaModal();
+  closeImportBatchModal();
+  const zeroStateShield = document.getElementById('hiddenZeroStateShield');
+  if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
+    zeroStateShield.setAttribute('hidden', '');
+  }
+
+  // 3. Filtrar fotos visibles e inicializar la cola con la cantidad real de fotos
+  const { hiddenPhotos, modoFavoritas, favoritas } = store.getState();
+  let baseList = lista.filter((item) => !isPhotoHidden(item, hiddenPhotos));
+  if (modoFavoritas) {
+    const favList = baseList.filter((p) => favoritas.includes(obtenerRuta(p)));
+    if (favList.length > 0) {
+      baseList = favList;
+    } else {
+      store.setModoFavoritas(false);
+      if (elements.btnFavFilter) elements.btnFavFilter.classList.remove('active');
+    }
+  }
+  activeFotos = baseList.slice(0);
+
+  if (!checkPhotoAvailability(lista.length, activeFotos.length)) {
+    return;
+  }
+
+  generatePlaybackQueue(activeFotos.length);
+
+  // 4. Mostrar de inmediato la primera foto y reanudar el carrusel
+  store.setPaused(false);
+  setSlideshowPlaybackState(false);
+  const firstIdx = getNextPhotoIndex(activeFotos.length);
+  store.setCurrentIndex(firstIdx >= 0 ? firstIdx : 0);
+  renderSlide();
+  startInterval();
+}
+
 async function processIncomingFilesWithProfile(fileList) {
   const profile = await getDeviceHardwareProfile();
   const validFiles = Array.from(fileList || []).filter((f) =>
     f &&
-    ((f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|avif|bmp|svg)$/i.test(f.name || '')) &&
-    !(f.name || '').startsWith('.')
+    ((f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|svg)$/i.test(f.name || f.webkitRelativePath || '')) &&
+    !((f.name || f.webkitRelativePath || '').split('/').pop() || '').startsWith('.')
   );
   if (!validFiles.length) return;
 
@@ -2137,23 +2208,11 @@ async function processIncomingFilesWithProfile(fileList) {
     await new Promise((resolve) => setTimeout(resolve, profile.delayMs));
   }
 
-  finalizeImportProgressBar();
-  generatePlaybackQueue(await getPhotosCountFromDB());
-
   if (importedCount > 0) {
     showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
   }
 
-  if (typeof reloadVisiblePhotosAndStart === 'function') {
-    await reloadVisiblePhotosAndStart();
-  } else if (typeof loadActiveGallery === 'function') {
-    await loadActiveGallery();
-  }
-
-  const zeroStateShield = document.getElementById('hiddenZeroStateShield');
-  if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
-    zeroStateShield.setAttribute('hidden', '');
-  }
+  await finalizeImportAndPlay();
 }
 
 function openImportMediaModal(e) {
@@ -2179,21 +2238,23 @@ function openImportBatchModal(validFiles, suggestedMax) {
   const promptEl = elements.importBatchPromptText || document.getElementById('importBatchPromptText');
   const btnSample = elements.btnImportBatchSample || document.getElementById('btnImportBatchSample');
   const btnAll = elements.btnImportBatchAll || document.getElementById('btnImportBatchAll');
+  const sampleTextEl = document.getElementById('importBtnSampleText') || btnSample;
+  const allTextEl = document.getElementById('importBtnAllText') || btnAll;
 
-  const countStr = String(validFiles.length);
-  const maxStr = String(suggestedMax);
+  const params = {
+    count: validFiles.length,
+    total: validFiles.length,
+    max: suggestedMax
+  };
 
   if (promptEl) {
-    const tpl = getTranslation('import_batch_prompt') || 'Has seleccionado {count} fotos. ¿Cómo deseas importarlas?';
-    promptEl.textContent = tpl.replace('{count}', countStr);
+    promptEl.textContent = t('import_batch_prompt', params);
   }
-  if (btnSample) {
-    const tpl = getTranslation('import_btn_sample') || 'Muestra aleatoria ({max} fotos)';
-    btnSample.textContent = tpl.replace('{max}', maxStr);
+  if (sampleTextEl) {
+    sampleTextEl.textContent = t('import_btn_sample', params);
   }
-  if (btnAll) {
-    const tpl = getTranslation('import_btn_all') || 'Importar todas ({count})';
-    btnAll.textContent = tpl.replace('{count}', countStr);
+  if (allTextEl) {
+    allTextEl.textContent = t('import_btn_all', params);
   }
   if (modal) {
     modal.hidden = false;
@@ -2213,8 +2274,8 @@ async function handleIncomingFileSelection(rawFileList) {
   const profile = await getDeviceHardwareProfile();
   const validFiles = Array.from(rawFileList).filter((f) =>
     f &&
-    ((f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|avif|bmp|svg)$/i.test(f.name || '')) &&
-    !(f.name || '').startsWith('.')
+    ((f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|svg)$/i.test(f.name || f.webkitRelativePath || '')) &&
+    !((f.name || f.webkitRelativePath || '').split('/').pop() || '').startsWith('.')
   );
   if (!validFiles.length) return;
 
@@ -2236,6 +2297,7 @@ if (typeof window !== 'undefined') {
   window.getPhotosCountFromDB = getPhotosCountFromDB;
   window.renderImportProgressBar = renderImportProgressBar;
   window.finalizeImportProgressBar = finalizeImportProgressBar;
+  window.finalizeImportAndPlay = finalizeImportAndPlay;
   window.processIncomingFilesWithProfile = processIncomingFilesWithProfile;
 }
 

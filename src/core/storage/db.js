@@ -69,16 +69,21 @@ export const FenixDB = (() => {
     return IMAGE_EXT_REGEX.test(baseName);
   }
 
-  async function addPhoto(blob, filename = 'foto.jpg') {
+  async function addPhoto(blob, filename) {
     const database = await open();
     if (!database) return null;
+
+    const resolvedFilename =
+      filename ||
+      (blob && typeof blob === 'object' && (blob.webkitRelativePath || blob.name)) ||
+      `foto-${Date.now()}.jpg`;
 
     return new Promise((resolve, reject) => {
       const tx = database.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
       const entry = {
         blob,
-        filename,
+        filename: resolvedFilename,
         addedAt: Date.now()
       };
       const req = store.add(entry);
@@ -244,6 +249,7 @@ export const FenixDB = (() => {
     getPhotoById,
     getPhotoBlobById,
     getPhotoCount,
+    countPhotos: getPhotoCount,
     deletePhoto,
     clearAll,
     purgeDatabase

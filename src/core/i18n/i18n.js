@@ -8,21 +8,38 @@ const TRANSLATIONS = { es, en, fr };
 export const I18N_MASTER = TRANSLATIONS;
 export const I18N_DICTIONARY = TRANSLATIONS;
 
-export function getTranslation(key) {
+export function getTranslation(key, params = {}) {
   let lang = 'es';
   try {
     lang = (typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || i18n.getLanguage() || 'es';
   } catch (_) {
     lang = i18n.getLanguage() || 'es';
   }
-  if (I18N_DICTIONARY[lang] && I18N_DICTIONARY[lang][key] !== undefined) {
-    return I18N_DICTIONARY[lang][key];
+  let str =
+    (I18N_DICTIONARY[lang] && I18N_DICTIONARY[lang][key] !== undefined)
+      ? I18N_DICTIONARY[lang][key]
+      : undefined;
+  if (str === undefined) {
+    const viaEngine = i18n.t(key, params);
+    if (viaEngine && viaEngine !== key) {
+      str = viaEngine;
+    } else {
+      str =
+        (I18N_DICTIONARY.en && I18N_DICTIONARY.en[key]) ||
+        (I18N_DICTIONARY.es && I18N_DICTIONARY.es[key]) ||
+        key;
+    }
   }
-  const viaEngine = i18n.t(key);
-  if (viaEngine && viaEngine !== key) {
-    return viaEngine;
+  if (typeof str === 'string' && params && typeof params === 'object') {
+    for (const [pKey, pVal] of Object.entries(params)) {
+      str = str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), String(pVal));
+    }
   }
-  return I18N_DICTIONARY.es[key] || key;
+  return str;
+}
+
+export function t(key, params = {}) {
+  return getTranslation(key, params);
 }
 
 export function formatLocalDate(dateObj) {
@@ -117,8 +134,12 @@ export class I18nEngine {
       }
     }
 
-    if (typeof value === 'string') {
-      return value.replace(/\{(\w+)\}/g, (_, k) => params[k] !== undefined ? params[k] : `{${k}}`);
+    if (typeof value === 'string' && params && typeof params === 'object') {
+      let str = value;
+      for (const [pKey, pVal] of Object.entries(params)) {
+        str = str.replace(new RegExp(`\\{${pKey}\\}`, 'g'), String(pVal));
+      }
+      return str;
     }
 
     return value;
@@ -133,7 +154,7 @@ export class I18nEngine {
       const key = el.getAttribute('data-i18n');
       if (key) {
         const translated = this.t(key);
-        if (typeof translated === 'string') {
+        if (typeof translated === 'string' && !/\{[a-zA-Z0-9_]+\}/.test(translated)) {
           el.innerHTML = translated;
         }
       }
