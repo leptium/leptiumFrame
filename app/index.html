@@ -639,6 +639,21 @@
 
   <input type="file" id="localPhotoInput" multiple accept="image/*" style="display:none">
 
+  <!-- Easter Egg: Terminal Retro ASCII (#asciiTerminalOverlay) -->
+  <div id="asciiTerminalOverlay" class="ascii-terminal-overlay hidden" hidden>
+    <div class="ascii-terminal-header">
+      <div class="ascii-terminal-titles">
+        <span id="asciiTerminalTitle" class="ascii-terminal-title" data-i18n="easter_egg_title">TERMINAL ASCII ACTIVA — MODO MATRIX</span>
+        <span id="asciiTerminalSubtitle" class="ascii-terminal-subtitle" data-i18n="easter_egg_subtitle">Toca con 3 dedos o pulsa en la esquina para salir</span>
+      </div>
+      <button id="btnCloseAsciiOverlay" type="button" class="ascii-terminal-close" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <span data-i18n="easter_egg_close">Salir</span>
+      </button>
+    </div>
+    <pre id="asciiContent" class="ascii-terminal-pre"></pre>
+  </div>
+
   <canvas id="collageCanvas" width="1600" height="1600"></canvas>
 
   <script type="module" src="/src/main.js"></script>

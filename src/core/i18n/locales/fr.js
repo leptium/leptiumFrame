@@ -268,6 +268,11 @@ export const fr = {
   zero_state_title: "Toutes les photos sont masquées",
   zero_state_desc: "Vous avez masqué toutes les photos de ce cadre.",
   zero_state_btn: "Restaurer la visibilité",
+  easter_egg_title: "TERMINAL ASCII ACTIF — MODE MATRIX",
+  easter_egg_subtitle: "Touchez avec 3 doigts ou dans le coin pour quitter",
+  easter_egg_console_on: "Mode console ASCII activé (Alt+A)",
+  easter_egg_console_off: "Mode ASCII désactivé",
+  easter_egg_close: "Quitter",
   zeroState: {
     title: "Toutes les photos sont masquées",
     desc: "Vous avez masqué toutes les photos de ce cadre.",

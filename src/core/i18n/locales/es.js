@@ -268,6 +268,11 @@ export const es = {
   zero_state_title: "Todas las fotos están ocultas",
   zero_state_desc: "Has marcado todas las fotografías de este marco como ocultas.",
   zero_state_btn: "Restablecer visibilidad",
+  easter_egg_title: "TERMINAL ASCII ACTIVA — MODO MATRIX",
+  easter_egg_subtitle: "Toca con 3 dedos o pulsa en la esquina para salir",
+  easter_egg_console_on: "Modo ASCII activado en consola (Alt+A)",
+  easter_egg_console_off: "Modo ASCII desactivado",
+  easter_egg_close: "Salir",
   zeroState: {
     title: "Todas las fotos están ocultas",
     desc: "Has marcado todas las fotografías de este marco como ocultas.",

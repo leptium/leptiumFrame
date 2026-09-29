@@ -268,6 +268,11 @@ export const en = {
   zero_state_title: "All photos are hidden",
   zero_state_desc: "You have marked all photos in this frame as hidden.",
   zero_state_btn: "Restore visibility",
+  easter_egg_title: "ASCII TERMINAL ACTIVE — MATRIX MODE",
+  easter_egg_subtitle: "Tap with 3 fingers or tap corner to exit",
+  easter_egg_console_on: "ASCII console mode enabled (Alt+A)",
+  easter_egg_console_off: "ASCII mode disabled",
+  easter_egg_close: "Exit",
   zeroState: {
     title: "All photos are hidden",
     desc: "You have marked all photos in this frame as hidden.",

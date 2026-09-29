@@ -64,13 +64,63 @@ function renderAsciiCurrent(width = 80, contrast = 1.0) {
   try {
     const ascii = convertImageToAscii(imgEl, width, contrast);
     if (ascii) {
-      console.log(`%c\n${ascii}`, 'font-family: monospace; line-height: 1.0; font-size: 10px; color: #30d158;');
+      const bannerTitle = t('easter_egg_title') || 'TERMINAL ASCII ACTIVA — MODO MATRIX';
+      console.log(
+        `%c[ ${bannerTitle} ]\n%c${ascii}`,
+        'font-family: monospace; font-weight: bold; font-size: 11px; color: #39ff14; background: #0b0f12; padding: 2px 6px;',
+        'font-family: monospace; line-height: 1.0; font-size: 10px; color: #39ff14; background: #0b0f12;'
+      );
     }
     return ascii;
   } catch (err) {
     console.warn('[ASCII] Error al convertir imagen actual:', err);
     return '';
   }
+}
+
+function isAsciiOverlayOpen() {
+  const overlay = elements.asciiTerminalOverlay || (typeof document !== 'undefined' ? document.getElementById('asciiTerminalOverlay') : null);
+  return Boolean(overlay && !overlay.hidden && !overlay.classList.contains('hidden'));
+}
+
+function updateAsciiOnScreenModal() {
+  const overlay = elements.asciiTerminalOverlay || (typeof document !== 'undefined' ? document.getElementById('asciiTerminalOverlay') : null);
+  const preEl = elements.asciiContent || (typeof document !== 'undefined' ? document.getElementById('asciiContent') : null);
+  if (!overlay || !preEl) return;
+
+  const titleEl = document.getElementById('asciiTerminalTitle');
+  const subEl = document.getElementById('asciiTerminalSubtitle');
+  if (titleEl) titleEl.textContent = t('easter_egg_title');
+  if (subEl) subEl.textContent = t('easter_egg_subtitle');
+
+  const imgEl = elements.img || (typeof document !== 'undefined' ? document.getElementById('displayImg') : null);
+  if (!imgEl || !(imgEl.naturalWidth || imgEl.width)) return;
+
+  const cols = typeof window !== 'undefined' && window.innerWidth < 640 ? 68 : 94;
+  const ascii = convertImageToAscii(imgEl, cols, 1.1);
+  if (ascii) {
+    preEl.textContent = ascii;
+  }
+}
+
+function toggleAsciiOnScreenModal(forceState) {
+  const overlay = elements.asciiTerminalOverlay || (typeof document !== 'undefined' ? document.getElementById('asciiTerminalOverlay') : null);
+  if (!overlay) return false;
+
+  const currentlyOpen = !overlay.hidden && !overlay.classList.contains('hidden');
+  const nextOpen = typeof forceState === 'boolean' ? forceState : !currentlyOpen;
+
+  if (nextOpen) {
+    overlay.classList.remove('hidden');
+    overlay.hidden = false;
+    overlay.removeAttribute('hidden');
+    updateAsciiOnScreenModal();
+  } else {
+    overlay.classList.add('hidden');
+    overlay.hidden = true;
+    overlay.setAttribute('hidden', '');
+  }
+  return nextOpen;
 }
 
 function toggleAsciiConsole(enable) {
@@ -110,6 +160,8 @@ export {
   convertImageToAscii,
   renderAsciiCurrent,
   toggleAsciiConsole,
+  toggleAsciiOnScreenModal,
+  updateAsciiOnScreenModal,
   showPhotoByIndex,
   config,
   generatePlaybackQueue,
@@ -136,6 +188,8 @@ if (typeof window !== 'undefined') {
   window.convertImageToAscii = convertImageToAscii;
   window.renderAsciiCurrent = renderAsciiCurrent;
   window.toggleAsciiConsole = toggleAsciiConsole;
+  window.toggleAsciiOnScreenModal = toggleAsciiOnScreenModal;
+  window.updateAsciiOnScreenModal = updateAsciiOnScreenModal;
   window.showPhotoByIndex = showPhotoByIndex;
   window.config = config;
   window.generatePlaybackQueue = generatePlaybackQueue;
@@ -146,6 +200,8 @@ if (typeof window !== 'undefined') {
     convertImageToAscii,
     renderAsciiCurrent,
     toggleAsciiConsole,
+    toggleAsciiOnScreenModal,
+    updateAsciiOnScreenModal,
     showPhotoByIndex
   });
 }
@@ -343,6 +399,9 @@ function initDOMReferences() {
   elements.chkFillScreen = document.getElementById('chkFillScreen');
   elements.iconFsExpand = document.getElementById('icon-fullscreen-expand');
   elements.iconFsCompress = document.getElementById('icon-fullscreen-compress');
+  elements.asciiTerminalOverlay = document.getElementById('asciiTerminalOverlay');
+  elements.asciiContent = document.getElementById('asciiContent');
+  elements.btnCloseAsciiOverlay = document.getElementById('btnCloseAsciiOverlay');
   syncFolderImportVisibility();
 }
 
@@ -1454,6 +1513,9 @@ function renderSlide() {
         if (elements.loader) elements.loader.style.display = 'none';
         if (config.asciiConsole && typeof window !== 'undefined' && typeof window.renderAsciiCurrent === 'function') {
           window.renderAsciiCurrent();
+        }
+        if (isAsciiOverlayOpen()) {
+          updateAsciiOnScreenModal();
         }
         // Revocar el ObjectURL de la diapositiva previa si estamos en modo lazy low-RAM
         if (transientObjectUrl) {
@@ -3135,12 +3197,60 @@ async function bootstrap() {
   rebuildYearFilter();
 
   let lastTouchTimestamp = 0;
+  let touchTriggerCooldown = false;
+
+  // Easter Egg Táctil (Tablets / iPad / Android): Toque simultáneo con 3 dedos
+  window.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches && e.touches.length === 3 && !touchTriggerCooldown) {
+        touchTriggerCooldown = true;
+        setTimeout(() => {
+          touchTriggerCooldown = false;
+        }, 800); // Evitar disparos repetidos
+
+        toggleAsciiOnScreenModal();
+      }
+    },
+    { passive: true }
+  );
+
+  if (elements.btnCloseAsciiOverlay) {
+    elements.btnCloseAsciiOverlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleAsciiOnScreenModal(false);
+    });
+  }
+
+  if (elements.asciiTerminalOverlay) {
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      elements.asciiTerminalOverlay.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+    elements.asciiTerminalOverlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Cerrar si el usuario hace tap en cualquier esquina de la pantalla
+      const x = e.clientX;
+      const y = e.clientY;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const cornerZone = 110;
+      const isCornerTap =
+        (x <= cornerZone && y <= cornerZone) ||
+        (x >= w - cornerZone && y <= cornerZone) ||
+        (x <= cornerZone && y >= h - cornerZone) ||
+        (x >= w - cornerZone && y >= h - cornerZone);
+      if (isCornerTap) {
+        toggleAsciiOnScreenModal(false);
+      }
+    });
+  }
 
   // Configurar gestos táctiles (iPad / Tablet / Móvil)
   if (elements.wrapper) {
     elements.wrapper.addEventListener('touchstart', (e) => {
+      if ((e.touches && e.touches.length >= 3) || touchTriggerCooldown || isAsciiOverlayOpen()) return;
       // Ignorar si el toque se originó en controles interactivos, barras o botones
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #asciiTerminalOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
       touchStartX = e.changedTouches[0].screenX;
@@ -3148,8 +3258,9 @@ async function bootstrap() {
     }, { passive: true });
 
     elements.wrapper.addEventListener('touchend', (e) => {
+      if ((e.touches && e.touches.length >= 2) || touchTriggerCooldown || isAsciiOverlayOpen()) return;
       // Ignorar si el toque finalizó sobre controles interactivos para no activar el toque por zonas de la foto
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #asciiTerminalOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -3196,9 +3307,10 @@ async function bootstrap() {
     elements.wrapper.addEventListener('click', (e) => {
       // Ignorar si es un clic sintético generado tras un toque en pantalla táctil
       if (Date.now() - lastTouchTimestamp < 600) return;
+      if (isAsciiOverlayOpen()) return;
 
       // Evitar que el clic en botones, modales o toolbars cambie la foto
-      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #asciiTerminalOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -3248,11 +3360,37 @@ async function bootstrap() {
     reloadVisiblePhotosAndStart();
   });
 
-  // Navegación por teclado en computadora (Flechas y barra espaciadora)
+  // Navegación por teclado en computadora (Flechas, barra espaciadora y Easter Egg Alt+A)
   window.addEventListener('keydown', (e) => {
     if (elements.cleanOverlay && elements.cleanOverlay.style.display === 'flex') return;
 
+    // Ignorar si el usuario está escribiendo en algún input
+    if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+    // Easter Egg Teclado: Alt + A (o Option + A en Mac)
+    if (e.altKey && (e.key === 'a' || e.key === 'A' || e.code === 'KeyA')) {
+      e.preventDefault();
+      config.asciiConsole = !config.asciiConsole;
+      try {
+        localStorage.setItem('leptium_ascii_console', String(config.asciiConsole));
+      } catch (_) {}
+
+      if (config.asciiConsole) {
+        if (typeof window.renderAsciiCurrent === 'function') {
+          window.renderAsciiCurrent();
+        }
+        showHudToast(t('easter_egg_console_on') || 'Modo ASCII activado en consola (Alt+A)', 'info');
+      } else {
+        showHudToast(t('easter_egg_console_off') || 'Modo ASCII desactivado', 'info');
+      }
+      return;
+    }
+
     if (e.key === 'Escape') {
+      if (isAsciiOverlayOpen()) {
+        toggleAsciiOnScreenModal(false);
+        return;
+      }
       if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
         elements.ambientContextMenu.setAttribute('hidden', '');
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
