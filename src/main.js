@@ -16,9 +16,11 @@ import { getCheckoutUrl } from './core/config/payments.js';
 import { DEMO_CATALOG } from './core/catalog/demoCatalog.js';
 import { detectHardwareProfile, applyHardwareProfileToDOM, getDeviceHardwareProfile } from './core/hardware/hardwareProfile.js';
 import { fisherYatesShuffle, getPhotoIdentityKey } from './core/slideshow/shuffleEngine.js';
+import { ASCII_RAMP, convertImageToAscii } from './modules/asciiConverter.js';
 
 const config = {
-  shuffle: typeof localStorage !== 'undefined' ? localStorage.getItem('leptium_shuffle') === 'true' : false
+  shuffle: typeof localStorage !== 'undefined' ? localStorage.getItem('leptium_shuffle') === 'true' : false,
+  asciiConsole: typeof localStorage !== 'undefined' ? localStorage.getItem('leptium_ascii_console') === 'true' : false
 };
 
 let playlistQueue = [];
@@ -56,6 +58,43 @@ function getNextPhotoIndex(totalPhotos) {
   return playlistQueue[currentQueuePointer++];
 }
 
+function renderAsciiCurrent(width = 80, contrast = 1.0) {
+  const imgEl = elements.img || (typeof document !== 'undefined' ? document.getElementById('displayImg') : null);
+  if (!imgEl || !(imgEl.naturalWidth || imgEl.width)) return '';
+  try {
+    const ascii = convertImageToAscii(imgEl, width, contrast);
+    if (ascii) {
+      console.log(`%c\n${ascii}`, 'font-family: monospace; line-height: 1.0; font-size: 10px; color: #30d158;');
+    }
+    return ascii;
+  } catch (err) {
+    console.warn('[ASCII] Error al convertir imagen actual:', err);
+    return '';
+  }
+}
+
+function toggleAsciiConsole(enable) {
+  const nextState = typeof enable === 'boolean' ? enable : !config.asciiConsole;
+  config.asciiConsole = nextState;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('leptium_ascii_console', String(nextState));
+    }
+  } catch (_) {}
+  console.info(`[FenixFrame] ASCII Console mode: ${nextState ? 'ENABLED' : 'DISABLED'}`);
+  if (nextState) {
+    renderAsciiCurrent();
+  }
+  return config.asciiConsole;
+}
+
+function showPhotoByIndex(index) {
+  if (typeof index === 'number' && index >= 0) {
+    store.setCurrentIndex(index);
+  }
+  renderSlide();
+}
+
 export {
   DEMO_CATALOG,
   getCollagePhotoSet,
@@ -67,6 +106,11 @@ export {
   detectHardwareProfile,
   getDeviceHardwareProfile,
   fisherYatesShuffle,
+  ASCII_RAMP,
+  convertImageToAscii,
+  renderAsciiCurrent,
+  toggleAsciiConsole,
+  showPhotoByIndex,
   config,
   generatePlaybackQueue,
   getNextPhotoIndex,
@@ -88,9 +132,22 @@ if (typeof window !== 'undefined') {
   window.detectHardwareProfile = detectHardwareProfile;
   window.getDeviceHardwareProfile = getDeviceHardwareProfile;
   window.fisherYatesShuffle = fisherYatesShuffle;
+  window.ASCII_RAMP = ASCII_RAMP;
+  window.convertImageToAscii = convertImageToAscii;
+  window.renderAsciiCurrent = renderAsciiCurrent;
+  window.toggleAsciiConsole = toggleAsciiConsole;
+  window.showPhotoByIndex = showPhotoByIndex;
   window.config = config;
   window.generatePlaybackQueue = generatePlaybackQueue;
   window.getNextPhotoIndex = getNextPhotoIndex;
+  window.FenixFrame = Object.assign(window.FenixFrame || {}, {
+    config,
+    ASCII_RAMP,
+    convertImageToAscii,
+    renderAsciiCurrent,
+    toggleAsciiConsole,
+    showPhotoByIndex
+  });
 }
 
 // Activar WakeLock para mantener pantalla encendida 24/7 con fallback de video canvas invisible
@@ -1395,6 +1452,9 @@ function renderSlide() {
       elements.img.onload = () => {
         elements.img.classList.add('visible');
         if (elements.loader) elements.loader.style.display = 'none';
+        if (config.asciiConsole && typeof window !== 'undefined' && typeof window.renderAsciiCurrent === 'function') {
+          window.renderAsciiCurrent();
+        }
         // Revocar el ObjectURL de la diapositiva previa si estamos en modo lazy low-RAM
         if (transientObjectUrl) {
           if (activeSlideBlobUrl && activeSlideBlobUrl !== transientObjectUrl) {
