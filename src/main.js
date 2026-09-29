@@ -309,12 +309,6 @@ const activeBlobUrls = new Set();
 
 function trackBlobUrl(url) {
   if (url && typeof url === 'string' && url.startsWith('blob:')) {
-    const maxUrls = (currentHardwareProfile && currentHardwareProfile.maxActiveObjectUrls) || 24;
-    while (activeBlobUrls.size >= maxUrls) {
-      const oldestUrl = activeBlobUrls.values().next().value;
-      if (!oldestUrl || oldestUrl === activeSlideBlobUrl) break;
-      revokeBlobUrl(oldestUrl);
-    }
     activeBlobUrls.add(url);
   }
   return url;
@@ -403,45 +397,27 @@ async function getPhotoBlobFromIndexedDB(id) {
 
 async function loadLocalDatabasePhotos() {
   try {
-    const totalCount = await FenixDB.getPhotoCount().catch(() => 0);
-    const useLazyMode =
-      Boolean(currentHardwareProfile && currentHardwareProfile.lazyBlobResolution) ||
-      totalCount > ((currentHardwareProfile && currentHardwareProfile.maxActiveObjectUrls) || 24);
-
+    const dbPhotos = await FenixDB.getAllPhotos();
     // Revocar explícitamente URLs de blob anteriores para evitar memory leaks en WebKit
     clearAllBlobUrls();
-
-    if (useLazyMode) {
-      const metaList = await FenixDB.getAllPhotoMetadata();
-      if (metaList && metaList.length > 0) {
-        userLocalPhotos = [...metaList].reverse().map((p) => ({
-          id: p.id,
-          blob: null,
-          name: (p.filename || `foto-${p.id}`).replace(/\.[a-z0-9]+$/i, ''),
-          filename: p.filename || `foto-${p.id}.jpg`,
-          ruta: `idb://photo/${p.id}`,
-          fecha: new Date(p.addedAt).toLocaleDateString(),
-          camara: 'FenixFrameDB',
-          lugar: p.filename || 'Foto Local'
-        }));
-        return userLocalPhotos;
-      }
-      userLocalPhotos = [];
-      return [];
-    }
-
-    const dbPhotos = await FenixDB.getAllPhotos();
     if (dbPhotos && dbPhotos.length > 0) {
-      userLocalPhotos = [...dbPhotos].reverse().map((p) => ({
-        id: p.id,
-        blob: p.blob,
-        name: (p.filename || `foto-${p.id}`).replace(/\.[a-z0-9]+$/i, ''),
-        filename: p.filename || `foto-${p.id}.jpg`,
-        ruta: trackBlobUrl(URL.createObjectURL(p.blob)),
-        fecha: new Date(p.addedAt).toLocaleDateString(),
-        camara: 'FenixFrameDB',
-        lugar: p.filename || 'Foto Local'
-      }));
+      userLocalPhotos = [...dbPhotos]
+        .reverse()
+        .map((p) => {
+          const blobObj = p.blob || p.file || p.data || null;
+          if (!(blobObj instanceof Blob)) return null;
+          return {
+            id: p.id,
+            blob: blobObj,
+            name: (p.filename || `foto-${p.id}`).replace(/\.[a-z0-9]+$/i, ''),
+            filename: p.filename || `foto-${p.id}.jpg`,
+            ruta: trackBlobUrl(URL.createObjectURL(blobObj)),
+            fecha: new Date(p.addedAt || Date.now()).toLocaleDateString(),
+            camara: 'FenixFrameDB',
+            lugar: p.filename || 'Foto Local'
+          };
+        })
+        .filter(Boolean);
       return userLocalPhotos;
     }
     userLocalPhotos = [];
@@ -1650,19 +1626,51 @@ function actualizarFuenteUI(tipo) {
   }
 }
 
+function resetImportFileInputs() {
+  ['importFileInputPhotos', 'importFileInputFolder', 'localMediaInput', 'localFolderInput', 'localPhotoInput'].forEach((id) => {
+    const el = elements[id] || document.getElementById(id);
+    if (el) {
+      try {
+        el.value = '';
+      } catch (_) {}
+    }
+  });
+}
+
 async function reloadVisiblePhotosAndStart() {
+  finalizeImportProgressBar();
+  resetImportFileInputs();
+
   await loadLocalDatabasePhotos();
   const lista = getCatalogoFotos();
   actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
   indexYearsFromCatalog(lista);
   rebuildYearFilter();
 
-  if (elements.emptyStateContainer && Array.isArray(userLocalPhotos) && userLocalPhotos.length > 0) {
-    elements.emptyStateContainer.style.display = 'none';
+  if (Array.isArray(userLocalPhotos) && userLocalPhotos.length > 0) {
+    const welcomeEls = document.querySelectorAll('.welcome-modal, #welcomeModal, #emptyStateContainer, .empty-state-overlay');
+    welcomeEls.forEach((el) => {
+      el.style.display = 'none';
+      el.setAttribute('hidden', '');
+    });
+    if (elements.emptyStateContainer) {
+      elements.emptyStateContainer.style.display = 'none';
+    }
+  }
+
+  closeImportMediaModal();
+  closeImportBatchModal();
+
+  const zeroStateShield = document.getElementById('hiddenZeroStateShield');
+  if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
+    zeroStateShield.setAttribute('hidden', '');
   }
 
   const { hiddenPhotos, modoFavoritas, favoritas } = store.getState();
   let baseList = lista.filter((item) => !isPhotoHidden(item, hiddenPhotos));
+  if (baseList.length === 0 && Array.isArray(userLocalPhotos) && userLocalPhotos.length > 0) {
+    baseList = userLocalPhotos.slice(0);
+  }
 
   if (modoFavoritas) {
     const favList = baseList.filter((p) => favoritas.includes(obtenerRuta(p)));
@@ -1679,7 +1687,10 @@ async function reloadVisiblePhotosAndStart() {
     return;
   }
 
+  failCount = 0;
   generatePlaybackQueue(activeFotos.length);
+  store.setPaused(false);
+  setSlideshowPlaybackState(false);
   const firstIdx = getNextPhotoIndex(activeFotos.length);
   store.setCurrentIndex(firstIdx >= 0 ? firstIdx : 0);
   renderSlide();
@@ -1687,6 +1698,8 @@ async function reloadVisiblePhotosAndStart() {
 }
 
 const loadActiveGallery = reloadVisiblePhotosAndStart;
+const initGallery = reloadVisiblePhotosAndStart;
+const loadStoredPhotos = reloadVisiblePhotosAndStart;
 
 function setSlideshowPlaybackState(isPaused) {
   const paused = Boolean(isPaused);
@@ -2087,8 +2100,31 @@ let pendingBatchFiles = [];
 let pendingBatchMax = 40;
 
 async function storeSinglePhotoInDB(file) {
-  const filename = (file && (file.webkitRelativePath || file.name)) || `foto-${Date.now()}.jpg`;
-  return await FenixDB.addPhoto(file, filename);
+  if (!file) return null;
+  const rawName = (file && (file.webkitRelativePath || file.name)) || `foto-${Date.now()}.jpg`;
+  const filename = rawName.split('/').pop() || rawName;
+  let blobToStore = file;
+  try {
+    if (typeof file.arrayBuffer === 'function') {
+      const buffer = await file.arrayBuffer();
+      const inferredMime =
+        file.type ||
+        (/\.png$/i.test(filename)
+          ? 'image/png'
+          : /\.webp$/i.test(filename)
+            ? 'image/webp'
+            : /\.gif$/i.test(filename)
+              ? 'image/gif'
+              : /\.avif$/i.test(filename)
+                ? 'image/avif'
+                : 'image/jpeg');
+      blobToStore = new Blob([buffer], { type: inferredMime });
+    }
+  } catch (readErr) {
+    console.warn('[Import] Fallback almacenando File directo:', readErr);
+    blobToStore = file;
+  }
+  return await FenixDB.addPhoto(blobToStore, rawName);
 }
 
 async function getPhotosCountFromDB() {
@@ -2131,58 +2167,7 @@ function finalizeImportProgressBar() {
 }
 
 async function finalizeImportAndPlay() {
-  finalizeImportProgressBar();
-
-  // 1. Recargar el array principal de fotos desde IndexedDB
-  await loadLocalDatabasePhotos();
-  const lista = getCatalogoFotos();
-  actualizarFuenteUI(cloudConnector.isConnected() ? 'cloud' : 'local');
-  indexYearsFromCatalog(lista);
-  rebuildYearFilter();
-
-  // 2. Cerrar el modal inicial/bienvenida y modales de importación
-  const welcomeEls = document.querySelectorAll('.welcome-modal, #welcomeModal, #emptyStateContainer, .empty-state-overlay');
-  welcomeEls.forEach((el) => {
-    el.style.display = 'none';
-    el.setAttribute('hidden', '');
-  });
-  if (elements.emptyStateContainer) {
-    elements.emptyStateContainer.style.display = 'none';
-  }
-  closeImportMediaModal();
-  closeImportBatchModal();
-  const zeroStateShield = document.getElementById('hiddenZeroStateShield');
-  if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
-    zeroStateShield.setAttribute('hidden', '');
-  }
-
-  // 3. Filtrar fotos visibles e inicializar la cola con la cantidad real de fotos
-  const { hiddenPhotos, modoFavoritas, favoritas } = store.getState();
-  let baseList = lista.filter((item) => !isPhotoHidden(item, hiddenPhotos));
-  if (modoFavoritas) {
-    const favList = baseList.filter((p) => favoritas.includes(obtenerRuta(p)));
-    if (favList.length > 0) {
-      baseList = favList;
-    } else {
-      store.setModoFavoritas(false);
-      if (elements.btnFavFilter) elements.btnFavFilter.classList.remove('active');
-    }
-  }
-  activeFotos = baseList.slice(0);
-
-  if (!checkPhotoAvailability(lista.length, activeFotos.length)) {
-    return;
-  }
-
-  generatePlaybackQueue(activeFotos.length);
-
-  // 4. Mostrar de inmediato la primera foto y reanudar el carrusel
-  store.setPaused(false);
-  setSlideshowPlaybackState(false);
-  const firstIdx = getNextPhotoIndex(activeFotos.length);
-  store.setCurrentIndex(firstIdx >= 0 ? firstIdx : 0);
-  renderSlide();
-  startInterval();
+  await reloadVisiblePhotosAndStart();
 }
 
 async function processIncomingFilesWithProfile(fileList) {
@@ -2197,22 +2182,31 @@ async function processIncomingFilesWithProfile(fileList) {
   let importedCount = 0;
   const total = validFiles.length;
 
-  for (let i = 0; i < total; i += profile.chunkSize) {
-    const chunk = validFiles.slice(i, i + profile.chunkSize);
-    for (const file of chunk) {
-      await storeSinglePhotoInDB(file);
-      importedCount++;
-      renderImportProgressBar(importedCount, total);
+  try {
+    for (let i = 0; i < total; i += profile.chunkSize) {
+      const chunk = validFiles.slice(i, i + profile.chunkSize);
+      for (const file of chunk) {
+        try {
+          await storeSinglePhotoInDB(file);
+          importedCount++;
+        } catch (err) {
+          console.warn('[Import] Error al guardar archivo:', err);
+        }
+        renderImportProgressBar(importedCount, total);
+      }
+      // Ceder el hilo principal y permitir recolección de basura (GC)
+      await new Promise((resolve) => setTimeout(resolve, profile.delayMs));
     }
-    // Ceder el hilo principal y permitir recolección de basura (GC)
-    await new Promise((resolve) => setTimeout(resolve, profile.delayMs));
+  } finally {
+    finalizeImportProgressBar();
   }
 
   if (importedCount > 0) {
     showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
   }
 
-  await finalizeImportAndPlay();
+  // Recargar la colección desde IndexedDB, cerrar modal de bienvenida, generar cola (shuffle si activo) y arrancar carrusel
+  await reloadVisiblePhotosAndStart();
 }
 
 function openImportMediaModal(e) {
@@ -2686,6 +2680,7 @@ function initAddMediaAndCollage() {
       backdrop.addEventListener('click', (e) => {
         e.stopPropagation();
         pendingBatchFiles = [];
+        resetImportFileInputs();
         closeImportBatchModal(e);
       });
     }
@@ -2695,6 +2690,7 @@ function initAddMediaAndCollage() {
     btnCloseBatch.addEventListener('click', (e) => {
       e.stopPropagation();
       pendingBatchFiles = [];
+      resetImportFileInputs();
       closeImportBatchModal(e);
     });
   }
@@ -2728,7 +2724,6 @@ function initAddMediaAndCollage() {
     if (!inputEl) return;
     inputEl.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
-      inputEl.value = '';
       if (!files.length) return;
       await handleIncomingFileSelection(files);
     });

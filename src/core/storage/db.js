@@ -86,9 +86,15 @@ export const FenixDB = (() => {
         filename: resolvedFilename,
         addedAt: Date.now()
       };
+      let addedId = null;
       const req = store.add(entry);
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        addedId = req.result;
+      };
       req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve(addedId);
+      tx.onerror = () => reject(tx.error || req.error);
+      tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
     });
   }
 

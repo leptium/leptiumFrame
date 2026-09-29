@@ -5,7 +5,7 @@
  * Fail-safe: Resilient Cache-First for images with offline fallback.
  */
 
-const CACHE_NAME = 'fenixframe-v26';
+const CACHE_NAME = 'fenixframe-v27';
 const PRECACHE_ASSETS = [
   '/',
   '/app/',
@@ -56,33 +56,46 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Nunca interceptar esquemas locales (blob:, data:, chrome-extension:) ni el propio sw.js
+  if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.pathname === '/sw.js') {
+    return;
+  }
+
   // Omitir peticiones a APIs de pago, telemetria o endpoints dinamicos
   if (event.request.url.includes('api.lemonsqueezy.com') || url.pathname.startsWith('/api/')) {
     return;
   }
 
-  // 1. Navegacion de paginas HTML (Documentos): Network-First con fallback resiliente offline
+  // 1. Navegacion de paginas HTML (Documentos): Network-First con actualizacion de cache y fallback offline
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
-      fetch(event.request, { redirect: 'follow' }).catch(async () => {
-        // Si el usuario navegó al Home (Landing Page)
-        if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '') {
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // Si el usuario navegó al Home (Landing Page)
+          if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '') {
+            return (
+              (await caches.match('/index.html')) ||
+              (await caches.match('/')) ||
+              (await caches.match('/app'))
+            );
+          }
+          // Si el usuario navegó a la App del marco
           return (
+            (await caches.match('/app')) ||
+            (await caches.match('/app/')) ||
+            (await caches.match('/app.html')) ||
+            (await caches.match('/app/index.html')) ||
             (await caches.match('/index.html')) ||
-            (await caches.match('/')) ||
-            (await caches.match('/app'))
+            (await caches.match('/'))
           );
-        }
-        // Si el usuario navegó a la App del marco
-        return (
-          (await caches.match('/app')) ||
-          (await caches.match('/app/')) ||
-          (await caches.match('/app.html')) ||
-          (await caches.match('/app/index.html')) ||
-          (await caches.match('/index.html')) ||
-          (await caches.match('/'))
-        );
-      })
+        })
     );
     return;
   }
