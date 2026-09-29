@@ -15,12 +15,16 @@ function dataUrlToBlob(dataUrl) {
 }
 
 export class WebMediaPicker extends IMediaPicker {
-  async pickPhotos(options = { multiple: true }) {
+  async pickPhotos(options = { multiple: true, directory: false, lazy: false }) {
     return new Promise((resolve) => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
       input.multiple = options.multiple !== false;
+      if (options.directory) {
+        input.setAttribute('webkitdirectory', '');
+        input.setAttribute('directory', '');
+      }
 
       input.onchange = () => {
         if (!input.files || input.files.length === 0) {
@@ -29,8 +33,8 @@ export class WebMediaPicker extends IMediaPicker {
         }
 
         const results = Array.from(input.files).map((file) => ({
-          uri: URL.createObjectURL(file),
-          name: file.name,
+          uri: options.lazy ? '' : URL.createObjectURL(file),
+          name: file.webkitRelativePath || file.name,
           size: file.size,
           type: file.type,
           fileRef: file

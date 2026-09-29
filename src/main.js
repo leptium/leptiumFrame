@@ -14,8 +14,19 @@ import { InstallHelper } from './core/install/installHelper.js';
 import { FenixDB } from './core/storage/db.js';
 import { getCheckoutUrl } from './core/config/payments.js';
 import { DEMO_CATALOG } from './core/catalog/demoCatalog.js';
+import { detectHardwareProfile, applyHardwareProfileToDOM } from './core/hardware/hardwareProfile.js';
+import { fisherYatesShuffle, getPhotoIdentityKey } from './core/slideshow/shuffleEngine.js';
 
-export { DEMO_CATALOG, getCollagePhotoSet, I18N_MASTER, I18N_DICTIONARY, getTranslation, formatLocalDate };
+export {
+  DEMO_CATALOG,
+  getCollagePhotoSet,
+  I18N_MASTER,
+  I18N_DICTIONARY,
+  getTranslation,
+  formatLocalDate,
+  detectHardwareProfile,
+  fisherYatesShuffle
+};
 if (typeof window !== 'undefined') {
   window.DEMO_CATALOG = DEMO_CATALOG;
   window.getCollagePhotoSet = getCollagePhotoSet;
@@ -23,31 +34,31 @@ if (typeof window !== 'undefined') {
   window.I18N_DICTIONARY = I18N_DICTIONARY;
   window.getTranslation = getTranslation;
   window.formatLocalDate = formatLocalDate;
+  window.detectHardwareProfile = detectHardwareProfile;
+  window.fisherYatesShuffle = fisherYatesShuffle;
 }
 
 // Activar WakeLock para mantener pantalla encendida 24/7 con fallback de video canvas invisible
 WakeLock.enable().catch((err) => console.warn('[WakeLock] Inicial:', err));
 
-// Subsistema Determinista de Perfiles de Dispositivo (TV, Phone, Legacy Tablet, Desktop)
-function evaluateAndApplyDeviceProfile() {
-  const root = document.documentElement;
-  const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-  const minDim = Math.min(window.innerWidth, window.innerHeight);
-  const maxDim = Math.max(window.innerWidth, window.innerHeight);
-  const ua = (navigator.userAgent || '').toLowerCase();
-  const isTV = /smart-tv|tizen|webos|googletv|android tv|crkey|appletv/i.test(ua);
+// Subsistema Determinista de Perfiles de Hardware Local (iPadOS Low-RAM vs Android / TV / Desktop)
+let currentHardwareProfile = detectHardwareProfile();
 
-  let profile = 'desktop';
-  if (isTV || (!isTouch && maxDim >= 1920 && minDim >= 1080)) {
-    profile = 'tv';
-  } else if (isTouch && minDim < 600) {
-    profile = 'phone';
-  } else if (isTouch && minDim >= 600) {
-    profile = 'legacy-tablet';
+function syncFolderImportVisibility() {
+  const showFolder = Boolean(currentHardwareProfile && currentHardwareProfile.supportsFolderImport);
+  const btnFolder = document.getElementById('btnAddFolder');
+  const btnEmptyFolder = document.getElementById('btnEmptyAddFolder');
+  if (btnFolder) {
+    btnFolder.style.display = showFolder ? '' : 'none';
   }
+  if (btnEmptyFolder) {
+    btnEmptyFolder.style.display = showFolder ? '' : 'none';
+  }
+}
 
-  root.setAttribute('data-device-profile', profile);
-  root.setAttribute('data-input-mode', isTouch ? 'touch' : 'pointer');
+function evaluateAndApplyDeviceProfile() {
+  currentHardwareProfile = applyHardwareProfileToDOM(document.documentElement);
+  syncFolderImportVisibility();
 }
 
 if (typeof window !== 'undefined') {
@@ -134,7 +145,9 @@ function initDOMReferences() {
   elements.btnExportCollage = document.getElementById('btnExportCollage') || document.getElementById('btnCollage');
   elements.btnCollage = elements.btnExportCollage;
   elements.btnAddMedia = document.getElementById('btnAddMedia');
+  elements.btnAddFolder = document.getElementById('btnAddFolder');
   elements.localMediaInput = document.getElementById('localMediaInput');
+  elements.localFolderInput = document.getElementById('localFolderInput');
   elements.btnHidePhoto = document.getElementById('btnHidePhoto');
   elements.btnFavorite = document.getElementById('btnFavorite') || document.getElementById('btnHeart');
   elements.btnHeart = elements.btnFavorite;
@@ -191,6 +204,7 @@ function initDOMReferences() {
   }
   elements.emptyStateContainer = document.getElementById('emptyStateContainer');
   elements.btnEmptyAddPhotos = document.getElementById('btnEmptyAddPhotos');
+  elements.btnEmptyAddFolder = document.getElementById('btnEmptyAddFolder');
   elements.hiddenZeroStateShield = document.getElementById('hiddenZeroStateShield');
   elements.btnResetHiddenPhotos = document.getElementById('btnResetHiddenPhotos');
   elements.btnManualInstall = elements.btnFullscreen;
@@ -198,6 +212,7 @@ function initDOMReferences() {
   elements.chkFillScreen = document.getElementById('chkFillScreen');
   elements.iconFsExpand = document.getElementById('icon-fullscreen-expand');
   elements.iconFsCompress = document.getElementById('icon-fullscreen-compress');
+  syncFolderImportVisibility();
 }
 
 // Variables de ejecución
@@ -210,21 +225,29 @@ let touchStartX = 0;
 let touchStartY = 0;
 let collageDataUrl = "";
 let failCount = 0;
+let lastPlayedPhotoKey = null;
+let activeSlideBlobUrl = null;
 
-// Gestión agresiva de memoria para WebKit / iOS Safari
+// Gestión agresiva de memoria para WebKit / iOS Safari (iPadOS Low-RAM Protection)
 let preloaderImage = null;
 let imageLoadWatchdog = null;
 const activeBlobUrls = new Set();
 
 function trackBlobUrl(url) {
   if (url && typeof url === 'string' && url.startsWith('blob:')) {
+    const maxUrls = (currentHardwareProfile && currentHardwareProfile.maxActiveObjectUrls) || 24;
+    while (activeBlobUrls.size >= maxUrls) {
+      const oldestUrl = activeBlobUrls.values().next().value;
+      if (!oldestUrl || oldestUrl === activeSlideBlobUrl) break;
+      revokeBlobUrl(oldestUrl);
+    }
     activeBlobUrls.add(url);
   }
   return url;
 }
 
 function revokeBlobUrl(url) {
-  if (url && typeof url === 'string' && url.startsWith('blob:') && activeBlobUrls.has(url)) {
+  if (url && typeof url === 'string' && url.startsWith('blob:')) {
     try {
       URL.revokeObjectURL(url);
     } catch (_) {}
@@ -239,6 +262,12 @@ function clearAllBlobUrls() {
     } catch (_) {}
   }
   activeBlobUrls.clear();
+  if (activeSlideBlobUrl) {
+    try {
+      URL.revokeObjectURL(activeSlideBlobUrl);
+    } catch (_) {}
+    activeSlideBlobUrl = null;
+  }
 }
 
 // Liberar buffers y URLs si la pestaña entra en segundo plano o se cierra
@@ -300,9 +329,34 @@ async function getPhotoBlobFromIndexedDB(id) {
 
 async function loadLocalDatabasePhotos() {
   try {
-    const dbPhotos = await FenixDB.getAllPhotos();
+    const totalCount = await FenixDB.countPhotos().catch(() => 0);
+    const useLazyMode =
+      Boolean(currentHardwareProfile && currentHardwareProfile.lazyBlobResolution) ||
+      totalCount > ((currentHardwareProfile && currentHardwareProfile.maxActiveObjectUrls) || 24);
+
     // Revocar explícitamente URLs de blob anteriores para evitar memory leaks en WebKit
     clearAllBlobUrls();
+
+    if (useLazyMode) {
+      const metaList = await FenixDB.getAllPhotoMetadata();
+      if (metaList && metaList.length > 0) {
+        userLocalPhotos = [...metaList].reverse().map((p) => ({
+          id: p.id,
+          blob: null,
+          name: (p.filename || `foto-${p.id}`).replace(/\.[a-z0-9]+$/i, ''),
+          filename: p.filename || `foto-${p.id}.jpg`,
+          ruta: `idb://photo/${p.id}`,
+          fecha: new Date(p.addedAt).toLocaleDateString(),
+          camara: 'FenixFrameDB',
+          lugar: p.filename || 'Foto Local'
+        }));
+        return userLocalPhotos;
+      }
+      userLocalPhotos = [];
+      return [];
+    }
+
+    const dbPhotos = await FenixDB.getAllPhotos();
     if (dbPhotos && dbPhotos.length > 0) {
       userLocalPhotos = [...dbPhotos].reverse().map((p) => ({
         id: p.id,
@@ -326,6 +380,13 @@ async function loadLocalDatabasePhotos() {
 window.triggerPickUserPhotos = () => {
   if (elements.localPhotoInput) {
     elements.localPhotoInput.click();
+  }
+};
+
+window.triggerPickUserFolder = () => {
+  const folderInput = elements.localFolderInput || document.getElementById('localFolderInput');
+  if (folderInput) {
+    folderInput.click();
   }
 };
 
@@ -1177,12 +1238,13 @@ function renderSlide() {
     if (!checkPhotoAvailability(totalInDB, 0)) {
       return;
     }
-    activeFotos = [...fotosDemo];
+    activeFotos = fisherYatesShuffle(fotosDemo, lastPlayedPhotoKey);
   }
   const state = store.getState();
   const idx = state.currentIndex || 0;
   const item = activeFotos[idx] || activeFotos[0];
   const photoPath = obtenerRuta(item);
+  lastPlayedPhotoKey = getPhotoIdentityKey(item);
 
   cerrarInfoDetallada();
   if (elements.img) elements.img.classList.remove('visible');
@@ -1204,11 +1266,20 @@ function renderSlide() {
     preloaderImage = new Image();
   }
 
+  let resolvedDisplaySrc = photoPath;
+  let transientObjectUrl = null;
+
   // Manejo centralizado de fallos de red intermitente o decodificación
   const handleSlideFailure = (reason = '') => {
     if (imageLoadWatchdog) {
       clearTimeout(imageLoadWatchdog);
       imageLoadWatchdog = null;
+    }
+    if (transientObjectUrl) {
+      try {
+        URL.revokeObjectURL(transientObjectUrl);
+      } catch (_) {}
+      transientObjectUrl = null;
     }
     if (preloaderImage) {
       preloaderImage.onload = null;
@@ -1224,7 +1295,7 @@ function renderSlide() {
     // Si fallan 5 fotos consecutivas y no estamos en demo, recuperar demo local offline garantizado
     if (failCount >= 5 && activeFotos !== fotosDemo && fotosDemo.length > 0) {
       console.warn('[ImageLoop] Múltiples fallos de red. Conmutando a colección demo local offline');
-      activeFotos = [...fotosDemo];
+      activeFotos = fisherYatesShuffle(fotosDemo, lastPlayedPhotoKey);
       failCount = 0;
       store.setCurrentIndex(0);
       setTimeout(renderSlide, 400);
@@ -1257,6 +1328,15 @@ function renderSlide() {
       elements.img.onload = () => {
         elements.img.classList.add('visible');
         if (elements.loader) elements.loader.style.display = 'none';
+        // Revocar el ObjectURL de la diapositiva previa si estamos en modo lazy low-RAM
+        if (transientObjectUrl) {
+          if (activeSlideBlobUrl && activeSlideBlobUrl !== transientObjectUrl) {
+            try {
+              URL.revokeObjectURL(activeSlideBlobUrl);
+            } catch (_) {}
+          }
+          activeSlideBlobUrl = transientObjectUrl;
+        }
         // Liberar inmediatamente el src del preloader para no tener doble copia en RAM/GPU
         if (preloaderImage) {
           preloaderImage.onload = null;
@@ -1268,7 +1348,7 @@ function renderSlide() {
       elements.img.onerror = () => {
         handleSlideFailure('(DOM img error)');
       };
-      elements.img.src = photoPath;
+      elements.img.src = resolvedDisplaySrc;
     } else {
       if (elements.loader) elements.loader.style.display = 'none';
     }
@@ -1322,7 +1402,25 @@ function renderSlide() {
     handleSlideFailure('(Network/decode error)');
   };
 
-  preloaderImage.src = photoPath;
+  if (typeof photoPath === 'string' && photoPath.startsWith('idb://photo/') && item && item.id !== undefined) {
+    getPhotoBlobFromIndexedDB(item.id)
+      .then((blob) => {
+        if (!blob) {
+          handleSlideFailure('(Missing IndexedDB Blob)');
+          return;
+        }
+        transientObjectUrl = URL.createObjectURL(blob);
+        resolvedDisplaySrc = transientObjectUrl;
+        if (preloaderImage) {
+          preloaderImage.src = resolvedDisplaySrc;
+        }
+      })
+      .catch(() => {
+        handleSlideFailure('(IndexedDB read error)');
+      });
+  } else {
+    preloaderImage.src = resolvedDisplaySrc;
+  }
 }
 
 
@@ -1356,8 +1454,12 @@ function showSponsorCard() {
 }
 
 function advanceToNextPhoto() {
+  if (!activeFotos || activeFotos.length === 0) return;
   const { currentIndex } = store.getState();
   const nextIdx = (currentIndex + 1) % activeFotos.length;
+  if (nextIdx === 0 && activeFotos.length > 1) {
+    activeFotos = fisherYatesShuffle(activeFotos, lastPlayedPhotoKey);
+  }
   store.setCurrentIndex(nextIdx);
   renderSlide();
   startInterval();
@@ -1477,14 +1579,11 @@ async function reloadVisiblePhotosAndStart() {
     }
   }
 
-  activeFotos = baseList.slice(0);
+  activeFotos = fisherYatesShuffle(baseList, lastPlayedPhotoKey);
   if (!checkPhotoAvailability(lista.length, activeFotos.length)) {
     return;
   }
 
-  if (!Array.isArray(userLocalPhotos) || userLocalPhotos.length === 0) {
-    activeFotos.sort(() => 0.5 - Math.random());
-  }
   store.setCurrentIndex(0);
   renderSlide();
   startInterval();
@@ -1605,7 +1704,7 @@ function toggleModoFavoritas(e) {
     return;
   }
 
-  activeFotos.sort(() => 0.5 - Math.random());
+  activeFotos = fisherYatesShuffle(activeFotos, lastPlayedPhotoKey);
   store.setCurrentIndex(0);
   renderSlide();
   startInterval();
@@ -1670,7 +1769,7 @@ function applyFilter() {
     return;
   }
 
-  activeFotos.sort(() => 0.5 - Math.random());
+  activeFotos = fisherYatesShuffle(activeFotos, lastPlayedPhotoKey);
   store.setCurrentIndex(0);
   renderSlide();
   startInterval();
@@ -1854,17 +1953,28 @@ const guardarFotoActual = downloadCurrentImage;
 let selectedCollagePhotos = [];
 
 async function storeUploadedPhotosInDB(files) {
-  if (!Array.isArray(files) || files.length === 0) return;
+  if (!files || files.length === 0) return;
 
-  for (const file of files) {
-    try {
-      await FenixDB.addPhoto(file, file.name);
-    } catch (dbErr) {
-      console.warn('[FenixDB] Error guardando foto:', dbErr);
+  const batchSize = (currentHardwareProfile && currentHardwareProfile.importBatchSize) || 6;
+  const yieldMs = (currentHardwareProfile && currentHardwareProfile.importYieldMs) || 16;
+  let lastProgressTick = 0;
+
+  const { imported } = await FenixDB.streamAddPhotos(files, {
+    batchSize,
+    yieldMs,
+    onProgress: ({ imported: count, total }) => {
+      if (total > 4 && (count === 1 || count === total || count - lastProgressTick >= batchSize)) {
+        lastProgressTick = count;
+        const tpl = getTranslation('import_streaming_progress') || 'Importando fotos ({current}/{total})...';
+        const progressMsg = tpl.replace('{current}', String(count)).replace('{total}', String(total));
+        setOverlayMetaLines([{ icon: icons.camera, text: progressMsg }]);
+      }
     }
-  }
+  });
 
-  showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
+  if (imported > 0) {
+    showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
+  }
 }
 
 async function getAllPhotosFromDB() {
@@ -2098,7 +2208,22 @@ async function ejecutarEnsambladoCollage(fotosDisponibles) {
     : effectivePool[0];
 
   const selectedItems = getCollagePhotoSet(currentPhoto, effectivePool);
-  const seleccion = selectedItems.map((item) => obtenerRuta(item)).filter(Boolean);
+  const tempBlobUrls = [];
+  const seleccion = [];
+
+  for (const item of selectedItems) {
+    const ruta = obtenerRuta(item);
+    if (typeof ruta === 'string' && ruta.startsWith('idb://photo/') && item && item.id !== undefined) {
+      const blob = await getPhotoBlobFromIndexedDB(item.id);
+      if (blob) {
+        const u = URL.createObjectURL(blob);
+        tempBlobUrls.push(u);
+        seleccion.push(u);
+      }
+    } else if (ruta) {
+      seleccion.push(ruta);
+    }
+  }
 
   try {
     const watermarkText = i18n.t('collage.watermark');
@@ -2116,6 +2241,10 @@ async function ejecutarEnsambladoCollage(fotosDisponibles) {
   } catch (err) {
     console.error('Error generando collage:', err);
     setOverlayMetaLines([{ icon: icons.warning, text: i18n.t('app.errors.collageFailed') }]);
+  } finally {
+    setTimeout(() => {
+      tempBlobUrls.forEach((u) => URL.revokeObjectURL(u));
+    }, 2000);
   }
 }
 
@@ -2138,6 +2267,8 @@ function cerrarCollageModal(e) {
 function initAddMediaAndCollage() {
   const btnAdd = elements.btnAddMedia || document.getElementById('btnAddMedia');
   const fileInput = elements.localMediaInput || document.getElementById('localMediaInput');
+  const btnAddFolder = elements.btnAddFolder || document.getElementById('btnAddFolder');
+  const folderInput = elements.localFolderInput || document.getElementById('localFolderInput');
   const btnCollage = elements.btnExportCollage || document.getElementById('btnExportCollage') || document.getElementById('btnCollage');
   const modal = elements.collageModal || document.getElementById('collageModal');
   const btnClose = elements.btnCloseCollageModal || document.getElementById('btnCloseCollageModal');
@@ -2158,12 +2289,46 @@ function initAddMediaAndCollage() {
     });
 
     fileInput.addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files || []);
-      if (files.length === 0) return;
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-      // 1. Persistir en IndexedDB
+      // 1. Persistir por goteo (streaming) en IndexedDB
       await storeUploadedPhotosInDB(files);
       fileInput.value = '';
+
+      // 2. Refrescar cola reactiva en memoria sin recargar la página
+      if (typeof reloadVisiblePhotosAndStart === 'function') {
+        await reloadVisiblePhotosAndStart();
+      } else if (typeof loadActiveGallery === 'function') {
+        await loadActiveGallery();
+      }
+
+      // 3. Si estaba en estado de cero fotos ocultas, retirar el escudo
+      const zeroStateShield = document.getElementById('hiddenZeroStateShield');
+      if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
+        zeroStateShield.setAttribute('hidden', '');
+      }
+    });
+  }
+
+  if (btnAddFolder && folderInput) {
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      btnAddFolder.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+    btnAddFolder.addEventListener('click', (e) => {
+      e.stopPropagation();
+      folderInput.click();
+    });
+  }
+
+  if (folderInput) {
+    folderInput.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      // 1. Persistir carpeta por goteo (streaming) en IndexedDB
+      await storeUploadedPhotosInDB(files);
+      folderInput.value = '';
 
       // 2. Refrescar cola reactiva en memoria sin recargar la página
       if (typeof reloadVisiblePhotosAndStart === 'function') {
@@ -2497,8 +2662,10 @@ async function bootstrap() {
     }
   });
 
-  activeFotos = lista.filter((item) => !isPhotoHidden(item, hiddenPhotos));
-  activeFotos.sort(() => 0.5 - Math.random());
+  activeFotos = fisherYatesShuffle(
+    lista.filter((item) => !isPhotoHidden(item, hiddenPhotos)),
+    lastPlayedPhotoKey
+  );
   rebuildYearFilter();
 
   let lastTouchTimestamp = 0;
