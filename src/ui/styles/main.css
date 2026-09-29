@@ -2120,3 +2120,128 @@ body.canvas-paused #emptyStateContainer {
   transform: scale(0.98);
   opacity: 0.85;
 }
+
+/* ==========================================================================
+   Shuffle Toggle & Streaming Import UI (Memory-Shuffle)
+   ========================================================================== */
+#actionToolbar #btnToggleShuffle.active {
+  background: rgba(255, 214, 10, 0.18);
+}
+
+#actionToolbar #btnToggleShuffle.active svg {
+  stroke: #ffd60a;
+  color: #ffd60a;
+}
+
+.import-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-import-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+
+.btn-import-option:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-import-option:active {
+  transform: scale(0.98);
+}
+
+.import-batch-prompt {
+  margin: 0 0 18px;
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.import-batch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.import-batch-actions .modal-btn-primary,
+.import-batch-actions .modal-btn-secondary {
+  width: 100%;
+  justify-content: center;
+  padding: 12px 16px;
+  font-size: 0.92rem;
+}
+
+.import-progress-overlay {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1600;
+  width: min(90vw, 360px);
+  pointer-events: none;
+}
+
+.import-progress-overlay[hidden] {
+  display: none !important;
+}
+
+.import-progress-card {
+  background: rgba(18, 18, 22, 0.9);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+}
+
+.import-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+.import-progress-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.import-progress-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.import-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #ffd60a;
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}
+

@@ -158,6 +158,16 @@
         <svg id="icon-play" class="sf-icon" style="display:none;" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
       </button>
 
+      <button id="btnToggleShuffle" class="tool-btn toolbar-btn" data-i18n-title="btn_shuffle_label" aria-label="Reproducción Aleatoria" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+      </button>
+
       <button id="btnFavorite" class="tool-btn toolbar-btn btn-heart" data-i18n-title="toolbar_favorite" type="button" onclick="toggleFavorita(event)">
         <svg class="sf-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
       </button>
@@ -166,7 +176,9 @@
         <svg class="sf-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
       </button>
 
-      <!-- Input invisible de archivos múltiples y de carpetas (webkitdirectory) -->
+      <!-- Entradas duales ocultas para importación de fotos individuales y carpetas completas -->
+      <input type="file" id="importFileInputPhotos" multiple accept="image/jpeg,image/png,image/webp,image/heic" hidden>
+      <input type="file" id="importFileInputFolder" webkitdirectory directory multiple hidden>
       <input type="file" id="localMediaInput" accept="image/jpeg,image/png,image/webp,image/heic" multiple hidden>
       <input type="file" id="localFolderInput" webkitdirectory directory multiple hidden>
 
@@ -174,12 +186,8 @@
         <svg class="sf-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
       </button>
 
-      <button id="btnAddMedia" class="tool-btn toolbar-btn" data-i18n-title="toolbar_add" type="button">
+      <button id="btnAddMedia" class="tool-btn toolbar-btn keep-on-pause" data-i18n-title="toolbar_add" type="button">
         <svg class="sf-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
-
-      <button id="btnAddFolder" class="tool-btn toolbar-btn" data-i18n-title="toolbar_add_folder" type="button">
-        <svg class="sf-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
       </button>
 
       <button id="btnDownload" class="tool-btn toolbar-btn" data-i18n-title="toolbar_download" type="button" onclick="guardarFotoActual(event)">
@@ -552,6 +560,80 @@
         </button>
       </div>
       <div id="calendarGridContainer" class="calendar-grid-container"></div>
+    </div>
+  </div>
+
+  <!-- Modal / Diálogo de Importación de Fotografías (Individuales vs Carpeta) -->
+  <div id="importMediaModal" class="leptium-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title" data-i18n="import_modal_title">Agregar fotografías</span>
+        <button id="btnCloseImportModal" type="button" class="btn-icon" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="import-options-list">
+        <button id="btnImportOptFiles" type="button" class="btn-import-option">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span data-i18n="import_opt_files">Seleccionar fotos</span>
+        </button>
+
+        <button id="btnImportOptFolder" type="button" class="btn-import-option">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            <line x1="12" y1="11" x2="12" y2="17"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+          <span data-i18n="import_opt_folder">Seleccionar carpeta</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación de Lote con Muestreo Aleatorio -->
+  <div id="importBatchModal" class="leptium-modal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="modal-title" data-i18n="import_modal_title">Agregar fotografías</span>
+        <button id="btnCloseBatchModal" type="button" class="btn-icon" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.75" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <p id="importBatchPromptText" class="import-batch-prompt"></p>
+
+      <div class="import-batch-actions">
+        <button id="btnImportBatchSample" type="button" class="modal-btn-primary">
+          <span id="importBtnSampleText" data-i18n="import_btn_sample">Lote aleatorio</span>
+        </button>
+        <button id="btnImportBatchAll" type="button" class="modal-btn-secondary">
+          <span id="importBtnAllText" data-i18n="import_btn_all">Cargar todas</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de progreso de importación por goteo (Streaming to IndexedDB) -->
+  <div id="importProgressOverlay" class="import-progress-overlay" hidden>
+    <div class="import-progress-card">
+      <div class="import-progress-header">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="#ffd60a" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <span id="importProgressText" class="import-progress-text">0 / 0</span>
+      </div>
+      <div class="import-progress-track">
+        <div id="importProgressBarFill" class="import-progress-fill"></div>
+      </div>
     </div>
   </div>
 

@@ -93,6 +93,48 @@ export function detectHardwareProfile() {
   };
 }
 
+export async function getDeviceHardwareProfile() {
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent ? navigator.userAgent : '').toLowerCase();
+  const isIPad =
+    /ipad/.test(ua) ||
+    (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/.test(ua);
+
+  // Estimación de cuota de almacenamiento disponible
+  let storageMBAvailable = 1000;
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+    try {
+      const { quota, usage } = await navigator.storage.estimate();
+      storageMBAvailable = Math.round((quota - usage) / (1024 * 1024));
+    } catch (_) {}
+  }
+
+  // Perfil por defecto (Desktop / Hardware moderno)
+  const profile = {
+    platform: 'desktop',
+    chunkSize: 10,
+    delayMs: 40,
+    suggestedBatchMax: 100,
+    storageMBAvailable
+  };
+
+  if (isIPad) {
+    // Restricción severa para WebKit legacy en iPad Air 1 / 2 (1GB - 2GB RAM)
+    profile.platform = 'ipados';
+    profile.chunkSize = 3;
+    profile.delayMs = 90;
+    profile.suggestedBatchMax = 40;
+  } else if (isAndroid) {
+    // Optimización para Android de gama de entrada (Lenovo Tab M8)
+    profile.platform = 'android';
+    profile.chunkSize = 6;
+    profile.delayMs = 60;
+    profile.suggestedBatchMax = 50;
+  }
+
+  return profile;
+}
+
 export function applyHardwareProfileToDOM() {
   const profile = detectHardwareProfile();
   if (typeof document !== 'undefined' && document.documentElement) {
@@ -107,3 +149,4 @@ export function applyHardwareProfileToDOM() {
   }
   return profile;
 }
+

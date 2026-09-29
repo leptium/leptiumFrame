@@ -14,8 +14,47 @@ import { InstallHelper } from './core/install/installHelper.js';
 import { FenixDB } from './core/storage/db.js';
 import { getCheckoutUrl } from './core/config/payments.js';
 import { DEMO_CATALOG } from './core/catalog/demoCatalog.js';
-import { detectHardwareProfile, applyHardwareProfileToDOM } from './core/hardware/hardwareProfile.js';
+import { detectHardwareProfile, applyHardwareProfileToDOM, getDeviceHardwareProfile } from './core/hardware/hardwareProfile.js';
 import { fisherYatesShuffle, getPhotoIdentityKey } from './core/slideshow/shuffleEngine.js';
+
+const config = {
+  shuffle: typeof localStorage !== 'undefined' ? localStorage.getItem('leptium_shuffle') === 'true' : false
+};
+
+let playlistQueue = [];
+let currentQueuePointer = 0;
+
+function generatePlaybackQueue(totalPhotos) {
+  const count =
+    typeof totalPhotos === 'number' && totalPhotos >= 0
+      ? totalPhotos
+      : Array.isArray(activeFotos)
+        ? activeFotos.length
+        : 0;
+  playlistQueue = Array.from({ length: count }, (_, i) => i);
+  if (config.shuffle && count > 1) {
+    for (let i = playlistQueue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [playlistQueue[i], playlistQueue[j]] = [playlistQueue[j], playlistQueue[i]];
+    }
+  }
+  currentQueuePointer = 0;
+  return playlistQueue;
+}
+
+function getNextPhotoIndex(totalPhotos) {
+  const count =
+    typeof totalPhotos === 'number' && totalPhotos >= 0
+      ? totalPhotos
+      : Array.isArray(activeFotos)
+        ? activeFotos.length
+        : 0;
+  if (count === 0) return -1;
+  if (playlistQueue.length !== count || currentQueuePointer >= playlistQueue.length) {
+    generatePlaybackQueue(count);
+  }
+  return playlistQueue[currentQueuePointer++];
+}
 
 export {
   DEMO_CATALOG,
@@ -25,7 +64,16 @@ export {
   getTranslation,
   formatLocalDate,
   detectHardwareProfile,
-  fisherYatesShuffle
+  getDeviceHardwareProfile,
+  fisherYatesShuffle,
+  config,
+  generatePlaybackQueue,
+  getNextPhotoIndex,
+  storeSinglePhotoInDB,
+  getPhotosCountFromDB,
+  renderImportProgressBar,
+  finalizeImportProgressBar,
+  processIncomingFilesWithProfile
 };
 if (typeof window !== 'undefined') {
   window.DEMO_CATALOG = DEMO_CATALOG;
@@ -35,7 +83,11 @@ if (typeof window !== 'undefined') {
   window.getTranslation = getTranslation;
   window.formatLocalDate = formatLocalDate;
   window.detectHardwareProfile = detectHardwareProfile;
+  window.getDeviceHardwareProfile = getDeviceHardwareProfile;
   window.fisherYatesShuffle = fisherYatesShuffle;
+  window.config = config;
+  window.generatePlaybackQueue = generatePlaybackQueue;
+  window.getNextPhotoIndex = getNextPhotoIndex;
 }
 
 // Activar WakeLock para mantener pantalla encendida 24/7 con fallback de video canvas invisible
@@ -48,11 +100,15 @@ function syncFolderImportVisibility() {
   const showFolder = Boolean(currentHardwareProfile && currentHardwareProfile.supportsFolderImport);
   const btnFolder = document.getElementById('btnAddFolder');
   const btnEmptyFolder = document.getElementById('btnEmptyAddFolder');
+  const btnImportOptFolder = document.getElementById('btnImportOptFolder');
   if (btnFolder) {
     btnFolder.style.display = showFolder ? '' : 'none';
   }
   if (btnEmptyFolder) {
     btnEmptyFolder.style.display = showFolder ? '' : 'none';
+  }
+  if (btnImportOptFolder) {
+    btnImportOptFolder.style.display = showFolder ? '' : 'none';
   }
 }
 
@@ -139,6 +195,7 @@ function initDOMReferences() {
   elements.btnHome = document.getElementById('btnHome');
   elements.btnFullscreen = document.getElementById('btnFullscreen') || document.getElementById('btn-manual-install');
   elements.btnPlayPause = document.getElementById('btnPlayPause');
+  elements.btnToggleShuffle = document.getElementById('btnToggleShuffle');
   elements.iconPause = document.getElementById('icon-pause');
   elements.iconPlay = document.getElementById('icon-play');
   elements.btnInfo = document.getElementById('btnInfo');
@@ -146,8 +203,22 @@ function initDOMReferences() {
   elements.btnCollage = elements.btnExportCollage;
   elements.btnAddMedia = document.getElementById('btnAddMedia');
   elements.btnAddFolder = document.getElementById('btnAddFolder');
-  elements.localMediaInput = document.getElementById('localMediaInput');
-  elements.localFolderInput = document.getElementById('localFolderInput');
+  elements.importFileInputPhotos = document.getElementById('importFileInputPhotos');
+  elements.importFileInputFolder = document.getElementById('importFileInputFolder');
+  elements.localMediaInput = document.getElementById('localMediaInput') || elements.importFileInputPhotos;
+  elements.localFolderInput = document.getElementById('localFolderInput') || elements.importFileInputFolder;
+  elements.importMediaModal = document.getElementById('importMediaModal');
+  elements.btnCloseImportModal = document.getElementById('btnCloseImportModal');
+  elements.btnImportOptFiles = document.getElementById('btnImportOptFiles');
+  elements.btnImportOptFolder = document.getElementById('btnImportOptFolder');
+  elements.importBatchModal = document.getElementById('importBatchModal');
+  elements.btnCloseBatchModal = document.getElementById('btnCloseBatchModal');
+  elements.importBatchPromptText = document.getElementById('importBatchPromptText');
+  elements.btnImportBatchSample = document.getElementById('btnImportBatchSample');
+  elements.btnImportBatchAll = document.getElementById('btnImportBatchAll');
+  elements.importProgressOverlay = document.getElementById('importProgressOverlay');
+  elements.importProgressBarFill = document.getElementById('importProgressBarFill');
+  elements.importProgressText = document.getElementById('importProgressText');
   elements.btnHidePhoto = document.getElementById('btnHidePhoto');
   elements.btnFavorite = document.getElementById('btnFavorite') || document.getElementById('btnHeart');
   elements.btnHeart = elements.btnFavorite;
@@ -183,7 +254,7 @@ function initDOMReferences() {
   elements.collageCanvas = document.getElementById('collageCanvas');
   elements.sponsorModal = document.getElementById('sponsorModal');
   elements.photoPermissionModal = document.getElementById('photoPermissionModal');
-  elements.localPhotoInput = document.getElementById('localPhotoInput') || elements.localMediaInput;
+  elements.localPhotoInput = document.getElementById('localPhotoInput') || elements.importFileInputPhotos || elements.localMediaInput;
   elements.currentSourceBadge = document.getElementById('currentSourceBadge');
   elements.cloudSyncModal = document.getElementById('cloudSyncModal');
   elements.cloudProRequiredBanner = document.getElementById('cloudProRequiredBanner');
@@ -378,13 +449,14 @@ async function loadLocalDatabasePhotos() {
 }
 
 window.triggerPickUserPhotos = () => {
-  if (elements.localPhotoInput) {
-    elements.localPhotoInput.click();
+  const input = elements.importFileInputPhotos || document.getElementById('importFileInputPhotos') || elements.localPhotoInput;
+  if (input) {
+    input.click();
   }
 };
 
 window.triggerPickUserFolder = () => {
-  const folderInput = elements.localFolderInput || document.getElementById('localFolderInput');
+  const folderInput = elements.importFileInputFolder || document.getElementById('importFileInputFolder') || elements.localFolderInput || document.getElementById('localFolderInput');
   if (folderInput) {
     folderInput.click();
   }
@@ -438,9 +510,16 @@ window.resetLocalData = async () => {
     if (elements.localPhotoInput) {
       elements.localPhotoInput.value = '';
     }
+    if (elements.importFileInputPhotos) {
+      elements.importFileInputPhotos.value = '';
+    }
+    if (elements.importFileInputFolder) {
+      elements.importFileInputFolder.value = '';
+    }
     indexYearsFromCatalog(fotosDemo);
     rebuildYearFilter();
     activeFotos = [...fotosDemo];
+    generatePlaybackQueue(activeFotos.length);
     closeSettings();
     if (elements.emptyStateContainer) {
       elements.emptyStateContainer.style.display = 'none';
@@ -453,7 +532,8 @@ window.resetLocalData = async () => {
     store.setPaused(false);
     setSlideshowPlaybackState(false);
     checkPhotoAvailability(activeFotos.length, activeFotos.length);
-    store.setCurrentIndex(0);
+    const nextIdx = getNextPhotoIndex(activeFotos.length);
+    store.setCurrentIndex(nextIdx >= 0 ? nextIdx : 0);
     renderSlide();
     startInterval();
     showHudToast(i18n.t('toasts.data_reset') || 'Almacenamiento local purgado. Reproduciendo colección demo.', 'info');
@@ -1455,11 +1535,8 @@ function showSponsorCard() {
 
 function advanceToNextPhoto() {
   if (!activeFotos || activeFotos.length === 0) return;
-  const { currentIndex } = store.getState();
-  const nextIdx = (currentIndex + 1) % activeFotos.length;
-  if (nextIdx === 0 && activeFotos.length > 1) {
-    activeFotos = fisherYatesShuffle(activeFotos, lastPlayedPhotoKey);
-  }
+  const nextIdx = getNextPhotoIndex(activeFotos.length);
+  if (nextIdx < 0) return;
   store.setCurrentIndex(nextIdx);
   renderSlide();
   startInterval();
@@ -1477,9 +1554,16 @@ function nextPhoto() {
 
 function prevPhoto() {
   cerrarInfoDetallada();
-  const { currentIndex } = store.getState();
-  const prevIdx = (currentIndex - 1 + activeFotos.length) % activeFotos.length;
-  store.setCurrentIndex(prevIdx);
+  if (!activeFotos || activeFotos.length === 0) return;
+  if (playlistQueue.length === activeFotos.length && playlistQueue.length > 0) {
+    currentQueuePointer = (currentQueuePointer - 2 + playlistQueue.length) % playlistQueue.length;
+    const prevIdx = playlistQueue[currentQueuePointer++];
+    store.setCurrentIndex(prevIdx);
+  } else {
+    const { currentIndex } = store.getState();
+    const prevIdx = (currentIndex - 1 + activeFotos.length) % activeFotos.length;
+    store.setCurrentIndex(prevIdx);
+  }
   renderSlide();
   startInterval();
 }
@@ -1579,12 +1663,14 @@ async function reloadVisiblePhotosAndStart() {
     }
   }
 
-  activeFotos = fisherYatesShuffle(baseList, lastPlayedPhotoKey);
+  activeFotos = baseList.slice(0);
   if (!checkPhotoAvailability(lista.length, activeFotos.length)) {
     return;
   }
 
-  store.setCurrentIndex(0);
+  generatePlaybackQueue(activeFotos.length);
+  const firstIdx = getNextPhotoIndex(activeFotos.length);
+  store.setCurrentIndex(firstIdx >= 0 ? firstIdx : 0);
   renderSlide();
   startInterval();
 }
@@ -1637,6 +1723,34 @@ function togglePause(e) {
   }
 }
 
+function updateShuffleButtonUI() {
+  const btn = elements.btnToggleShuffle || document.getElementById('btnToggleShuffle');
+  if (!btn) return;
+  btn.classList.toggle('active', Boolean(config.shuffle));
+  btn.setAttribute('aria-pressed', String(Boolean(config.shuffle)));
+}
+
+function toggleShuffle(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
+  config.shuffle = !config.shuffle;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('leptium_shuffle', String(config.shuffle));
+    }
+  } catch (_) {}
+  updateShuffleButtonUI();
+  generatePlaybackQueue(activeFotos.length);
+  const nextIdx = getNextPhotoIndex(activeFotos.length);
+  if (nextIdx >= 0) {
+    store.setCurrentIndex(nextIdx);
+    renderSlide();
+    startInterval();
+  }
+}
+
 // --------------------------------------------------------------------------
 // Favoritos y Filtros
 // --------------------------------------------------------------------------
@@ -1668,7 +1782,9 @@ async function toggleFavorita(e) {
       toggleModoFavoritas();
       return;
     }
-    if (currentIndex >= activeFotos.length) store.setCurrentIndex(0);
+    generatePlaybackQueue(activeFotos.length);
+    const nextIdx = getNextPhotoIndex(activeFotos.length);
+    store.setCurrentIndex(nextIdx >= 0 ? nextIdx : 0);
     renderSlide();
   }
 }
@@ -1704,8 +1820,9 @@ function toggleModoFavoritas(e) {
     return;
   }
 
-  activeFotos = fisherYatesShuffle(activeFotos, lastPlayedPhotoKey);
-  store.setCurrentIndex(0);
+  generatePlaybackQueue(activeFotos.length);
+  const firstIdx = getNextPhotoIndex(activeFotos.length);
+  store.setCurrentIndex(firstIdx >= 0 ? firstIdx : 0);
   renderSlide();
   startInterval();
 }
@@ -1731,7 +1848,9 @@ async function hideCurrentPhoto(e) {
     return;
   }
 
-  if (currentIndex >= activeFotos.length) store.setCurrentIndex(0);
+  generatePlaybackQueue(activeFotos.length);
+  const nextIdx = getNextPhotoIndex(activeFotos.length);
+  store.setCurrentIndex(nextIdx >= 0 ? nextIdx : 0);
   renderSlide();
   resetProgressBar();
 }
@@ -1769,8 +1888,9 @@ function applyFilter() {
     return;
   }
 
-  activeFotos = fisherYatesShuffle(activeFotos, lastPlayedPhotoKey);
-  store.setCurrentIndex(0);
+  generatePlaybackQueue(activeFotos.length);
+  const firstIdx = getNextPhotoIndex(activeFotos.length);
+  store.setCurrentIndex(firstIdx >= 0 ? firstIdx : 0);
   renderSlide();
   startInterval();
 }
@@ -1952,29 +2072,171 @@ const guardarFotoActual = downloadCurrentImage;
 
 let selectedCollagePhotos = [];
 
-async function storeUploadedPhotosInDB(files) {
-  if (!files || files.length === 0) return;
+let pendingBatchFiles = [];
+let pendingBatchMax = 40;
 
-  const batchSize = (currentHardwareProfile && currentHardwareProfile.importBatchSize) || 6;
-  const yieldMs = (currentHardwareProfile && currentHardwareProfile.importYieldMs) || 16;
-  let lastProgressTick = 0;
+async function storeSinglePhotoInDB(file) {
+  return await FenixDB.addPhoto(file);
+}
 
-  const { imported } = await FenixDB.streamAddPhotos(files, {
-    batchSize,
-    yieldMs,
-    onProgress: ({ imported: count, total }) => {
-      if (total > 4 && (count === 1 || count === total || count - lastProgressTick >= batchSize)) {
-        lastProgressTick = count;
-        const tpl = getTranslation('import_streaming_progress') || 'Importando fotos ({current}/{total})...';
-        const progressMsg = tpl.replace('{current}', String(count)).replace('{total}', String(total));
-        setOverlayMetaLines([{ icon: icons.camera, text: progressMsg }]);
-      }
+async function getPhotosCountFromDB() {
+  return await FenixDB.countPhotos().catch(() => 0);
+}
+
+function renderImportProgressBar(current, total) {
+  const overlay = elements.importProgressOverlay || document.getElementById('importProgressOverlay');
+  const fill = elements.importProgressBarFill || document.getElementById('importProgressBarFill');
+  const text = elements.importProgressText || document.getElementById('importProgressText');
+  const tpl = getTranslation('import_streaming_progress') || 'Importando fotos ({current}/{total})...';
+  const msg = tpl.replace('{current}', String(current)).replace('{total}', String(total));
+
+  if (overlay) {
+    overlay.hidden = false;
+  }
+  if (fill && total > 0) {
+    const pct = Math.min(100, Math.round((current / total) * 100));
+    fill.style.width = `${pct}%`;
+  }
+  if (text) {
+    text.textContent = msg;
+  }
+  setOverlayMetaLines([{ icon: icons.camera, text: msg }]);
+}
+
+function finalizeImportProgressBar() {
+  const overlay = elements.importProgressOverlay || document.getElementById('importProgressOverlay');
+  const fill = elements.importProgressBarFill || document.getElementById('importProgressBarFill');
+  if (overlay) {
+    overlay.hidden = true;
+  }
+  if (fill) {
+    fill.style.width = '0%';
+  }
+}
+
+async function processIncomingFilesWithProfile(fileList) {
+  const profile = await getDeviceHardwareProfile();
+  const validFiles = Array.from(fileList || []).filter((f) =>
+    f &&
+    ((f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|avif|bmp|svg)$/i.test(f.name || '')) &&
+    !(f.name || '').startsWith('.')
+  );
+  if (!validFiles.length) return;
+
+  let importedCount = 0;
+  const total = validFiles.length;
+
+  for (let i = 0; i < total; i += profile.chunkSize) {
+    const chunk = validFiles.slice(i, i + profile.chunkSize);
+    for (const file of chunk) {
+      await storeSinglePhotoInDB(file);
+      importedCount++;
+      renderImportProgressBar(importedCount, total);
     }
-  });
+    // Ceder el hilo principal y permitir recolección de basura (GC)
+    await new Promise((resolve) => setTimeout(resolve, profile.delayMs));
+  }
 
-  if (imported > 0) {
+  finalizeImportProgressBar();
+  generatePlaybackQueue(await getPhotosCountFromDB());
+
+  if (importedCount > 0) {
     showHudToast(i18n.t('app.saved') || 'Fotografías agregadas al marco', 'success');
   }
+
+  if (typeof reloadVisiblePhotosAndStart === 'function') {
+    await reloadVisiblePhotosAndStart();
+  } else if (typeof loadActiveGallery === 'function') {
+    await loadActiveGallery();
+  }
+
+  const zeroStateShield = document.getElementById('hiddenZeroStateShield');
+  if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
+    zeroStateShield.setAttribute('hidden', '');
+  }
+}
+
+function openImportMediaModal(e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  const modal = elements.importMediaModal || document.getElementById('importMediaModal');
+  if (modal) {
+    modal.hidden = false;
+  }
+}
+
+function closeImportMediaModal(e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  const modal = elements.importMediaModal || document.getElementById('importMediaModal');
+  if (modal) {
+    modal.hidden = true;
+  }
+}
+
+function openImportBatchModal(validFiles, suggestedMax) {
+  pendingBatchFiles = validFiles;
+  pendingBatchMax = suggestedMax;
+  const modal = elements.importBatchModal || document.getElementById('importBatchModal');
+  const promptEl = elements.importBatchPromptText || document.getElementById('importBatchPromptText');
+  const btnSample = elements.btnImportBatchSample || document.getElementById('btnImportBatchSample');
+  const btnAll = elements.btnImportBatchAll || document.getElementById('btnImportBatchAll');
+
+  const countStr = String(validFiles.length);
+  const maxStr = String(suggestedMax);
+
+  if (promptEl) {
+    const tpl = getTranslation('import_batch_prompt') || 'Has seleccionado {count} fotos. ¿Cómo deseas importarlas?';
+    promptEl.textContent = tpl.replace('{count}', countStr);
+  }
+  if (btnSample) {
+    const tpl = getTranslation('import_btn_sample') || 'Muestra aleatoria ({max} fotos)';
+    btnSample.textContent = tpl.replace('{max}', maxStr);
+  }
+  if (btnAll) {
+    const tpl = getTranslation('import_btn_all') || 'Importar todas ({count})';
+    btnAll.textContent = tpl.replace('{count}', countStr);
+  }
+  if (modal) {
+    modal.hidden = false;
+  }
+}
+
+function closeImportBatchModal(e) {
+  if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+  const modal = elements.importBatchModal || document.getElementById('importBatchModal');
+  if (modal) {
+    modal.hidden = true;
+  }
+}
+
+async function handleIncomingFileSelection(rawFileList) {
+  if (!rawFileList || rawFileList.length === 0) return;
+  const profile = await getDeviceHardwareProfile();
+  const validFiles = Array.from(rawFileList).filter((f) =>
+    f &&
+    ((f.type && f.type.startsWith('image/')) || /\.(jpe?g|png|webp|gif|avif|bmp|svg)$/i.test(f.name || '')) &&
+    !(f.name || '').startsWith('.')
+  );
+  if (!validFiles.length) return;
+
+  if (validFiles.length > profile.suggestedBatchMax) {
+    openImportBatchModal(validFiles, profile.suggestedBatchMax);
+    return;
+  }
+
+  await processIncomingFilesWithProfile(validFiles);
+}
+
+async function storeUploadedPhotosInDB(files) {
+  if (!files || files.length === 0) return;
+  await processIncomingFilesWithProfile(files);
+}
+
+if (typeof window !== 'undefined') {
+  window.storeSinglePhotoInDB = storeSinglePhotoInDB;
+  window.getPhotosCountFromDB = getPhotosCountFromDB;
+  window.renderImportProgressBar = renderImportProgressBar;
+  window.finalizeImportProgressBar = finalizeImportProgressBar;
+  window.processIncomingFilesWithProfile = processIncomingFilesWithProfile;
 }
 
 async function getAllPhotosFromDB() {
@@ -2265,10 +2527,21 @@ function cerrarCollageModal(e) {
 }
 
 function initAddMediaAndCollage() {
+  const btnShuffle = elements.btnToggleShuffle || document.getElementById('btnToggleShuffle');
   const btnAdd = elements.btnAddMedia || document.getElementById('btnAddMedia');
+  const inputPhotos = elements.importFileInputPhotos || document.getElementById('importFileInputPhotos');
+  const inputFolder = elements.importFileInputFolder || document.getElementById('importFileInputFolder');
   const fileInput = elements.localMediaInput || document.getElementById('localMediaInput');
   const btnAddFolder = elements.btnAddFolder || document.getElementById('btnAddFolder');
   const folderInput = elements.localFolderInput || document.getElementById('localFolderInput');
+  const importModal = elements.importMediaModal || document.getElementById('importMediaModal');
+  const btnCloseImport = elements.btnCloseImportModal || document.getElementById('btnCloseImportModal');
+  const btnOptFiles = elements.btnImportOptFiles || document.getElementById('btnImportOptFiles');
+  const btnOptFolder = elements.btnImportOptFolder || document.getElementById('btnImportOptFolder');
+  const batchModal = elements.importBatchModal || document.getElementById('importBatchModal');
+  const btnCloseBatch = elements.btnCloseBatchModal || document.getElementById('btnCloseBatchModal');
+  const btnBatchSample = elements.btnImportBatchSample || document.getElementById('btnImportBatchSample');
+  const btnBatchAll = elements.btnImportBatchAll || document.getElementById('btnImportBatchAll');
   const btnCollage = elements.btnExportCollage || document.getElementById('btnExportCollage') || document.getElementById('btnCollage');
   const modal = elements.collageModal || document.getElementById('collageModal');
   const btnClose = elements.btnCloseCollageModal || document.getElementById('btnCloseCollageModal');
@@ -2279,69 +2552,143 @@ function initAddMediaAndCollage() {
   const btnBackToEdit = elements.btnBackToEditCollage || document.getElementById('btnBackToEditCollage');
   const btnSaveFinal = elements.btnSaveCollageFinal || document.getElementById('btnSaveCollageFinal');
 
-  if (btnAdd && fileInput) {
+  updateShuffleButtonUI();
+
+  if (btnShuffle) {
+    ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      btnShuffle.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
+    });
+    btnShuffle.addEventListener('click', toggleShuffle);
+  }
+
+  if (btnAdd) {
     ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
       btnAdd.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
     });
     btnAdd.addEventListener('click', (e) => {
       e.stopPropagation();
-      fileInput.click();
-    });
-
-    fileInput.addEventListener('change', async (e) => {
-      const files = e.target.files;
-      if (!files || files.length === 0) return;
-
-      // 1. Persistir por goteo (streaming) en IndexedDB
-      await storeUploadedPhotosInDB(files);
-      fileInput.value = '';
-
-      // 2. Refrescar cola reactiva en memoria sin recargar la página
-      if (typeof reloadVisiblePhotosAndStart === 'function') {
-        await reloadVisiblePhotosAndStart();
-      } else if (typeof loadActiveGallery === 'function') {
-        await loadActiveGallery();
-      }
-
-      // 3. Si estaba en estado de cero fotos ocultas, retirar el escudo
-      const zeroStateShield = document.getElementById('hiddenZeroStateShield');
-      if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
-        zeroStateShield.setAttribute('hidden', '');
+      if (importModal) {
+        openImportMediaModal(e);
+      } else if (inputPhotos) {
+        inputPhotos.click();
+      } else if (fileInput) {
+        fileInput.click();
       }
     });
   }
 
-  if (btnAddFolder && folderInput) {
+  if (importModal) {
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      importModal.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+    const backdrop = importModal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeImportMediaModal(e);
+      });
+    }
+  }
+
+  if (btnCloseImport) {
+    btnCloseImport.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeImportMediaModal(e);
+    });
+  }
+
+  if (btnOptFiles) {
+    btnOptFiles.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeImportMediaModal(e);
+      if (inputPhotos) inputPhotos.click();
+      else if (fileInput) fileInput.click();
+    });
+  }
+
+  if (btnOptFolder) {
+    btnOptFolder.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeImportMediaModal(e);
+      if (inputFolder) inputFolder.click();
+      else if (folderInput) folderInput.click();
+    });
+  }
+
+  if (batchModal) {
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
+      batchModal.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+    const backdrop = batchModal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pendingBatchFiles = [];
+        closeImportBatchModal(e);
+      });
+    }
+  }
+
+  if (btnCloseBatch) {
+    btnCloseBatch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pendingBatchFiles = [];
+      closeImportBatchModal(e);
+    });
+  }
+
+  if (btnBatchSample) {
+    btnBatchSample.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const sampled = [...pendingBatchFiles];
+      for (let i = sampled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sampled[i], sampled[j]] = [sampled[j], sampled[i]];
+      }
+      const subset = sampled.slice(0, pendingBatchMax);
+      pendingBatchFiles = [];
+      closeImportBatchModal(e);
+      await processIncomingFilesWithProfile(subset);
+    });
+  }
+
+  if (btnBatchAll) {
+    btnBatchAll.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const allFiles = [...pendingBatchFiles];
+      pendingBatchFiles = [];
+      closeImportBatchModal(e);
+      await processIncomingFilesWithProfile(allFiles);
+    });
+  }
+
+  const bindFileInputChange = (inputEl) => {
+    if (!inputEl) return;
+    inputEl.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      inputEl.value = '';
+      if (!files.length) return;
+      await handleIncomingFileSelection(files);
+    });
+  };
+
+  bindFileInputChange(inputPhotos);
+  bindFileInputChange(inputFolder);
+  if (fileInput && fileInput !== inputPhotos) {
+    bindFileInputChange(fileInput);
+  }
+  if (folderInput && folderInput !== inputFolder) {
+    bindFileInputChange(folderInput);
+  }
+
+  if (btnAddFolder) {
     ['touchstart', 'touchend', 'pointerdown'].forEach((evtName) => {
       btnAddFolder.addEventListener(evtName, (e) => e.stopPropagation(), { passive: true });
     });
     btnAddFolder.addEventListener('click', (e) => {
       e.stopPropagation();
-      folderInput.click();
-    });
-  }
-
-  if (folderInput) {
-    folderInput.addEventListener('change', async (e) => {
-      const files = e.target.files;
-      if (!files || files.length === 0) return;
-
-      // 1. Persistir carpeta por goteo (streaming) en IndexedDB
-      await storeUploadedPhotosInDB(files);
-      folderInput.value = '';
-
-      // 2. Refrescar cola reactiva en memoria sin recargar la página
-      if (typeof reloadVisiblePhotosAndStart === 'function') {
-        await reloadVisiblePhotosAndStart();
-      } else if (typeof loadActiveGallery === 'function') {
-        await loadActiveGallery();
-      }
-
-      // 3. Si estaba en estado de cero fotos ocultas, retirar el escudo
-      const zeroStateShield = document.getElementById('hiddenZeroStateShield');
-      if (zeroStateShield && !zeroStateShield.hasAttribute('hidden')) {
-        zeroStateShield.setAttribute('hidden', '');
-      }
+      if (inputFolder) inputFolder.click();
+      else if (folderInput) folderInput.click();
     });
   }
 
@@ -2662,10 +3009,12 @@ async function bootstrap() {
     }
   });
 
-  activeFotos = fisherYatesShuffle(
-    lista.filter((item) => !isPhotoHidden(item, hiddenPhotos)),
-    lastPlayedPhotoKey
-  );
+  activeFotos = lista.filter((item) => !isPhotoHidden(item, hiddenPhotos));
+  generatePlaybackQueue(activeFotos.length);
+  const initialIdx = getNextPhotoIndex(activeFotos.length);
+  if (initialIdx >= 0) {
+    store.setCurrentIndex(initialIdx);
+  }
   rebuildYearFilter();
 
   let lastTouchTimestamp = 0;
@@ -2674,7 +3023,7 @@ async function bootstrap() {
   if (elements.wrapper) {
     elements.wrapper.addEventListener('touchstart', (e) => {
       // Ignorar si el toque se originó en controles interactivos, barras o botones
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
       touchStartX = e.changedTouches[0].screenX;
@@ -2683,7 +3032,7 @@ async function bootstrap() {
 
     elements.wrapper.addEventListener('touchend', (e) => {
       // Ignorar si el toque finalizó sobre controles interactivos para no activar el toque por zonas de la foto
-      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target && e.target.closest && e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2694,6 +3043,8 @@ async function bootstrap() {
       if (elements.calendarModal && !elements.calendarModal.hidden) return;
       if (elements.collageModal && !elements.collageModal.hidden) return;
       if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) return;
+      if (elements.importMediaModal && !elements.importMediaModal.hidden) return;
+      if (elements.importBatchModal && !elements.importBatchModal.hidden) return;
       if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
         elements.ambientContextMenu.setAttribute('hidden', '');
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
@@ -2730,7 +3081,7 @@ async function bootstrap() {
       if (Date.now() - lastTouchTimestamp < 600) return;
 
       // Evitar que el clic en botones, modales o toolbars cambie la foto
-      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
+      if (e.target.closest('#actionToolbar, #ambientHeader, #ambientWidget, #ambientContextMenu, #hiddenZeroStateShield, #emptyStateContainer, #topLeftContainer, #topRightPanel, #weatherWidget, #manualLocationModal, #calendarModal, #settingsModal, #collageModal, #collagePreviewModal, #importMediaModal, #importBatchModal, #importProgressOverlay, #btnMoreInfoWrapper, #cleanOverlay, #infoDetailModal, .tool-btn, .btn-more-info, .btn-modal, button, a')) {
         return;
       }
 
@@ -2739,6 +3090,8 @@ async function bootstrap() {
       if (elements.calendarModal && !elements.calendarModal.hidden) return;
       if (elements.collageModal && !elements.collageModal.hidden) return;
       if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) return;
+      if (elements.importMediaModal && !elements.importMediaModal.hidden) return;
+      if (elements.importBatchModal && !elements.importBatchModal.hidden) return;
       if (elements.ambientContextMenu && !elements.ambientContextMenu.hasAttribute('hidden')) {
         elements.ambientContextMenu.setAttribute('hidden', '');
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
@@ -2788,6 +3141,15 @@ async function bootstrap() {
         elements.ambientWidget?.setAttribute('aria-expanded', 'false');
         return;
       }
+      if (elements.importBatchModal && !elements.importBatchModal.hidden) {
+        pendingBatchFiles = [];
+        closeImportBatchModal(e);
+        return;
+      }
+      if (elements.importMediaModal && !elements.importMediaModal.hidden) {
+        closeImportMediaModal(e);
+        return;
+      }
       if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) {
         closeCollagePreviewModal(e);
         return;
@@ -2814,6 +3176,8 @@ async function bootstrap() {
     if (elements.calendarModal && !elements.calendarModal.hidden) return;
     if (elements.collageModal && !elements.collageModal.hidden) return;
     if (elements.collagePreviewModal && !elements.collagePreviewModal.hidden) return;
+    if (elements.importMediaModal && !elements.importMediaModal.hidden) return;
+    if (elements.importBatchModal && !elements.importBatchModal.hidden) return;
     if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
 
     if (e.key === 'ArrowRight') {
@@ -2862,6 +3226,10 @@ async function bootstrap() {
   window.openCollagePreviewModal = openCollagePreviewModal;
   window.closeCollagePreviewModal = closeCollagePreviewModal;
   window.togglePause = togglePause;
+  window.toggleShuffle = toggleShuffle;
+  window.openImportMediaModal = openImportMediaModal;
+  window.closeImportMediaModal = closeImportMediaModal;
+  window.closeImportBatchModal = closeImportBatchModal;
   window.setSlideshowPlaybackState = setSlideshowPlaybackState;
   window.checkPhotoAvailability = checkPhotoAvailability;
   window.reloadVisiblePhotosAndStart = reloadVisiblePhotosAndStart;
