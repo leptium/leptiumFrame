@@ -1227,7 +1227,7 @@ function renderMonthlyCalendar() {
     titleEl.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
   }
 
-  grid.innerHTML = '';
+  grid.textContent = '';
 
   const weekdayFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short' });
   // Base Sunday (2024-01-07 was Sunday)
@@ -1630,7 +1630,7 @@ function showSponsorCard() {
       sponsorCountdownTimer = null;
     }
     elements.sponsorModal.classList.remove('active');
-    elements.sponsorModal.innerHTML = '';
+    elements.sponsorModal.textContent = '';
     advanceToNextPhoto();
   };
 
@@ -1716,7 +1716,7 @@ function checkPhotoAvailability(totalInDB, visibleCount) {
     if (toolbar) toolbar.style.display = 'none';
     if (elements.emptyStateContainer) elements.emptyStateContainer.style.display = 'none';
     if (elements.img) elements.img.classList.remove('visible');
-    if (elements.overlay) elements.overlay.innerHTML = '';
+    if (elements.overlay) elements.overlay.textContent = '';
     if (zeroStateShield) zeroStateShield.removeAttribute('hidden');
     stopSlideshow(); // Detener loops y watchdog
     return false;
@@ -2044,12 +2044,17 @@ function applyFilter() {
 function rebuildYearFilter() {
   if (!elements.filterSelect) return;
   const currentVal = elements.filterSelect.value;
-  elements.filterSelect.innerHTML = `<option value="all" data-i18n="settings.allPhotos">${i18n.t('settings.allPhotos') || 'Todas las fotos'}</option>`;
+  elements.filterSelect.textContent = '';
+  const allOpt = document.createElement('option');
+  allOpt.value = 'all';
+  allOpt.setAttribute('data-i18n', 'settings.allPhotos');
+  allOpt.textContent = i18n.t('settings.allPhotos') || 'Todas las fotos';
+  elements.filterSelect.appendChild(allOpt);
   const yearsList = Object.keys(detectedYears).sort().reverse();
   yearsList.forEach((y) => {
     const opt = document.createElement('option');
     opt.value = y;
-    opt.innerText = `${i18n.t('app.year') || 'Año'} ${y}`;
+    opt.textContent = `${i18n.t('app.year') || 'Año'} ${y}`;
     elements.filterSelect.appendChild(opt);
   });
   elements.filterSelect.value = currentVal;
@@ -2439,7 +2444,7 @@ async function getAllPhotosFromDB() {
 async function populateCollageThumbnailGrid() {
   const grid = elements.collagePickerGrid || document.getElementById('collagePickerGrid');
   if (!grid) return;
-  grid.innerHTML = '';
+  grid.textContent = '';
 
   const photos = await getAllPhotosFromDB();
   photos.forEach((photo) => {
@@ -3121,15 +3126,19 @@ async function bootstrap() {
   // Suscripción reactiva del módulo de clima y geolocalización (iniciado en segundo plano sin bloqueo)
   weatherService.subscribe(({ locationStr, weatherStr, tempStr, tempC, weatherCode, isDay }) => {
     updateWeatherWidgetUI({ tempStr, locationStr, tempC, weatherCode, isDay });
-    if (elements.deviceLocation) {
-      if (locationStr) {
-        elements.deviceLocation.innerHTML = `${icons.location} ${locationStr}`;
-      }
+    if (elements.deviceLocation && locationStr) {
+      elements.deviceLocation.textContent = '';
+      const iconSpan = document.createElement('span');
+      iconSpan.innerHTML = icons.location;
+      elements.deviceLocation.appendChild(iconSpan);
+      elements.deviceLocation.appendChild(document.createTextNode(` ${locationStr}`));
     }
-    if (elements.weatherBox) {
-      if (weatherStr) {
-        elements.weatherBox.innerHTML = `${icons.thermometer} ${weatherStr}`;
-      }
+    if (elements.weatherBox && weatherStr) {
+      elements.weatherBox.textContent = '';
+      const iconSpan = document.createElement('span');
+      iconSpan.innerHTML = icons.thermometer;
+      elements.weatherBox.appendChild(iconSpan);
+      elements.weatherBox.appendChild(document.createTextNode(` ${weatherStr}`));
     }
   });
 

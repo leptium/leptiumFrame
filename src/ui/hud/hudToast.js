@@ -59,12 +59,17 @@ export function showHudToast(message, type = 'info', duration = 3500) {
     `;
   }
 
-  toast.innerHTML = `
-    <div class="sf-hud-icon-wrap" style="color: ${iconColor};">
-      ${iconSvg}
-    </div>
-    <span class="sf-hud-label">${message}</span>
-  `;
+  const iconWrap = document.createElement('div');
+  iconWrap.className = 'sf-hud-icon-wrap';
+  iconWrap.style.color = iconColor;
+  iconWrap.innerHTML = iconSvg;
+
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'sf-hud-label';
+  labelSpan.textContent = String(message ?? '');
+
+  toast.appendChild(iconWrap);
+  toast.appendChild(labelSpan);
 
   document.body.appendChild(toast);
 

@@ -1116,34 +1116,94 @@
         console.warn('No se pudo guardar la historia en localStorage:', err);
       }
 
+      function createExperienceCardElement(item, isJustPublished = false) {
+        const safeName = String(item.name || '').trim();
+        const safeCity = String(item.city || '').trim();
+        const safeDevice = String(item.device || '').trim();
+        const safeStory = String(item.story || '').trim();
+        const initials = safeName.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'LF';
+
+        const card = document.createElement('div');
+        card.className = 'experience-card';
+
+        const inner = document.createElement('div');
+        const header = document.createElement('div');
+        header.className = 'experience-header';
+
+        const authorWrap = document.createElement('div');
+        authorWrap.className = 'experience-author-wrap';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'experience-avatar';
+        avatar.style.background = '#ffd60a';
+        avatar.style.color = '#000';
+        avatar.textContent = initials;
+
+        const authorMeta = document.createElement('div');
+        const authorName = document.createElement('div');
+        authorName.className = 'experience-author-name';
+        authorName.textContent = safeName;
+
+        const authorLoc = document.createElement('div');
+        authorLoc.className = 'experience-author-loc';
+        authorLoc.textContent = safeCity;
+        if (isJustPublished) {
+          authorLoc.appendChild(document.createTextNode(' • '));
+          const badge = document.createElement('span');
+          badge.style.color = '#30d158';
+          badge.style.fontWeight = '600';
+          badge.textContent = 'Recién publicado';
+          authorLoc.appendChild(badge);
+        }
+
+        authorMeta.appendChild(authorName);
+        authorMeta.appendChild(authorLoc);
+        authorWrap.appendChild(avatar);
+        authorWrap.appendChild(authorMeta);
+
+        const devicePill = document.createElement('div');
+        devicePill.className = 'experience-device-pill';
+        const svgWrap = document.createElement('span');
+        svgWrap.innerHTML = '<svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>';
+        if (svgWrap.firstElementChild) {
+          devicePill.appendChild(svgWrap.firstElementChild);
+        }
+        const deviceSpan = document.createElement('span');
+        deviceSpan.textContent = safeDevice;
+        devicePill.appendChild(deviceSpan);
+
+        header.appendChild(authorWrap);
+        header.appendChild(devicePill);
+        inner.appendChild(header);
+
+        if (item.photo && typeof item.photo === 'string' && /^(data:image\/|https:\/\/|\/)/i.test(item.photo)) {
+          const img = document.createElement('img');
+          img.src = item.photo;
+          img.className = 'experience-card-photo';
+          img.alt = `Montaje de ${safeDevice}`;
+          img.loading = 'lazy';
+          inner.appendChild(img);
+        }
+
+        const starsContainer = document.createElement('div');
+        starsContainer.innerHTML = FIVE_STARS_HTML;
+        if (starsContainer.firstElementChild) {
+          inner.appendChild(starsContainer.firstElementChild);
+        }
+
+        const quote = document.createElement('p');
+        quote.className = 'experience-quote';
+        quote.textContent = `"${safeStory}"`;
+        inner.appendChild(quote);
+
+        card.appendChild(inner);
+        return card;
+      }
+
       // Renderizar inmediatamente en el grid
       const grid = document.getElementById('experiencesGrid');
       if (grid) {
-        const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'LF';
-        const photoHtml = photo ? `<img src="${photo}" class="experience-card-photo" alt="Montaje de ${device}" loading="lazy">` : '';
-        const card = document.createElement('div');
-        card.className = 'experience-card';
-        card.innerHTML = `
-          <div>
-            <div class="experience-header">
-              <div class="experience-author-wrap">
-                <div class="experience-avatar" style="background:#ffd60a;color:#000;">${initials}</div>
-                <div>
-                  <div class="experience-author-name">${name}</div>
-                  <div class="experience-author-loc">${city} • <span style="color:#30d158;font-weight:600;">Recién publicado</span></div>
-                </div>
-              </div>
-              <div class="experience-device-pill">
-                <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
-                <span>${device}</span>
-              </div>
-            </div>
-            ${photoHtml}
-            ${FIVE_STARS_HTML}
-            <p class="experience-quote">"${story}"</p>
-          </div>
-        `;
-        grid.prepend(card);
+        grid.prepend(createExperienceCardElement({ name, city, device, story, photo }, true));
       }
 
       const msg = document.getElementById('commSuccessMsg');
@@ -1163,30 +1223,78 @@
       const grid = document.getElementById('experiencesGrid');
       if (grid && saved.length > 0) {
         saved.forEach(item => {
-          const initials = item.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'LF';
-          const photoHtml = item.photo ? `<img src="${item.photo}" class="experience-card-photo" alt="Montaje de ${item.device}" loading="lazy">` : '';
+          const safeName = String(item.name || '').trim();
+          const safeCity = String(item.city || '').trim();
+          const safeDevice = String(item.device || '').trim();
+          const safeStory = String(item.story || '').trim();
+          const initials = safeName.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'LF';
+
           const card = document.createElement('div');
           card.className = 'experience-card';
-          card.innerHTML = `
-            <div>
-              <div class="experience-header">
-                <div class="experience-author-wrap">
-                  <div class="experience-avatar" style="background:#ffd60a;color:#000;">${initials}</div>
-                  <div>
-                    <div class="experience-author-name">${item.name}</div>
-                    <div class="experience-author-loc">${item.city}</div>
-                  </div>
-                </div>
-                <div class="experience-device-pill">
-                  <svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
-                  <span>${item.device}</span>
-                </div>
-              </div>
-              ${photoHtml}
-              ${FIVE_STARS_HTML}
-              <p class="experience-quote">"${item.story}"</p>
-            </div>
-          `;
+
+          const inner = document.createElement('div');
+          const header = document.createElement('div');
+          header.className = 'experience-header';
+
+          const authorWrap = document.createElement('div');
+          authorWrap.className = 'experience-author-wrap';
+
+          const avatar = document.createElement('div');
+          avatar.className = 'experience-avatar';
+          avatar.style.background = '#ffd60a';
+          avatar.style.color = '#000';
+          avatar.textContent = initials;
+
+          const authorMeta = document.createElement('div');
+          const authorName = document.createElement('div');
+          authorName.className = 'experience-author-name';
+          authorName.textContent = safeName;
+
+          const authorLoc = document.createElement('div');
+          authorLoc.className = 'experience-author-loc';
+          authorLoc.textContent = safeCity;
+
+          authorMeta.appendChild(authorName);
+          authorMeta.appendChild(authorLoc);
+          authorWrap.appendChild(avatar);
+          authorWrap.appendChild(authorMeta);
+
+          const devicePill = document.createElement('div');
+          devicePill.className = 'experience-device-pill';
+          const svgWrap = document.createElement('span');
+          svgWrap.innerHTML = '<svg class="sf-icon" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>';
+          if (svgWrap.firstElementChild) {
+            devicePill.appendChild(svgWrap.firstElementChild);
+          }
+          const deviceSpan = document.createElement('span');
+          deviceSpan.textContent = safeDevice;
+          devicePill.appendChild(deviceSpan);
+
+          header.appendChild(authorWrap);
+          header.appendChild(devicePill);
+          inner.appendChild(header);
+
+          if (item.photo && typeof item.photo === 'string' && /^(data:image\/|https:\/\/|\/)/i.test(item.photo)) {
+            const img = document.createElement('img');
+            img.src = item.photo;
+            img.className = 'experience-card-photo';
+            img.alt = `Montaje de ${safeDevice}`;
+            img.loading = 'lazy';
+            inner.appendChild(img);
+          }
+
+          const starsContainer = document.createElement('div');
+          starsContainer.innerHTML = FIVE_STARS_HTML;
+          if (starsContainer.firstElementChild) {
+            inner.appendChild(starsContainer.firstElementChild);
+          }
+
+          const quote = document.createElement('p');
+          quote.className = 'experience-quote';
+          quote.textContent = `"${safeStory}"`;
+          inner.appendChild(quote);
+
+          card.appendChild(inner);
           grid.prepend(card);
         });
       }

@@ -5,11 +5,13 @@
 export async function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
-  const lat = url.searchParams.get('latitude') || '43.67';
-  const lon = url.searchParams.get('longitude') || '-70.44';
+  const rawLat = parseFloat(url.searchParams.get('latitude') || '43.67');
+  const rawLon = parseFloat(url.searchParams.get('longitude') || '-70.44');
+  const lat = Number.isFinite(rawLat) && rawLat >= -90 && rawLat <= 90 ? rawLat.toFixed(4) : '43.67';
+  const lon = Number.isFinite(rawLon) && rawLon >= -180 && rawLon <= 180 ? rawLon.toFixed(4) : '-70.44';
 
   try {
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`;
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current_weather=true&temperature_unit=fahrenheit`;
     const response = await fetch(apiUrl, {
       headers: {
         'User-Agent': 'leptiumFrame-EdgeWorker/1.0'
