@@ -506,6 +506,57 @@ body {
   margin-bottom: 50px;
 }
 
+/* Apple-style Video Mockup Container */
+.demo-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1rem 5rem;
+}
+
+.device-mockup-container {
+  width: 100%;
+  max-width: 850px;
+  perspective: 1000px;
+}
+
+.tablet-frame {
+  position: relative;
+  background: #1a1d20;
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.camera-dot {
+  width: 8px;
+  height: 8px;
+  background: #0d0f11;
+  border-radius: 50%;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.screen-viewport {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #0b0f12;
+  aspect-ratio: 16 / 10;
+}
+
+.screen-viewport video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* Showcase Interactivo de Dispositivo (iPad Frame Mockup) */
 .showcase-wrapper {
   margin: 0 auto 120px;

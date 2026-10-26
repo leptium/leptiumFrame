@@ -157,19 +157,30 @@
         <a href="/app/" class="btn btn-secondary btn-large" data-i18n="hero.ctaOpen">Probar Gratis en Navegador</a>
       </div>
 
-      <!-- Previsualizador Interactivo en Dispositivo Mockup (iPad Frame) -->
-      <div class="showcase-wrapper">
-        <div class="device-frame">
-          <div class="device-badge-overlay">
-            <span class="pulse-dot"></span>
-            <span data-i18n="hero.demoBadge">Demo en Vivo • Haz clic en los lados para cambiar fotos o centro para pausar</span>
-          </div>
-
-          <div class="device-screen-container">
-            <iframe class="device-screen-iframe" src="/app/?embed=1" title="leptium FenixFrame Live Demo" loading="eager" scrolling="no" frameborder="0" allow="fullscreen; geolocation"></iframe>
+      <!-- Apple-Style Video Mockup Demo Section (Zero iframe) -->
+      <section class="demo-section">
+        <div class="device-mockup-container">
+          <div class="tablet-frame">
+            <!-- Bisel superior y cámara del marco de tablet -->
+            <div class="camera-dot"></div>
+            
+            <!-- Contenedor del reproductor de video -->
+            <div class="screen-viewport">
+              <video 
+                autoplay 
+                loop 
+                muted 
+                playsinline 
+                preload="metadata" 
+                poster="assets/demo-poster.webp">
+                <source src="assets/demo-preview.webm" type="video/webm">
+                <source src="assets/demo-preview.mp4" type="video/mp4">
+                Tu navegador no soporta la reproducción de video HTML5.
+              </video>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </section>
 
     <!-- Sección de Narrativa Emocional & Arquitectura Híbrida Soberana -->

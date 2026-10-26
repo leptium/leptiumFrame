@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Apple-style HTML5 video device mockup on landing page with native `<video>` container (`demo-preview.mp4`, `demo-preview.webm`, `demo-poster.webp`).
 - Hardware profiling module for legacy WebKit & low-RAM Android environments.
 - Streaming batch import pipeline with garbage-collection backpressure.
 - Fisher-Yates shuffle playback engine.
 - Dual-mode ASCII art easter egg (multitouch & terminal shortcut).
 
 ### Security
+- Zero-iframe architecture on landing page eliminating embedded frame surfaces.
 - Hardened Content-Security-Policy (CSP) with zero external script execution.
 - Strict XSS DOM sanitization on user file imports.
 - Clickjacking protection via X-Frame-Options DENY.
